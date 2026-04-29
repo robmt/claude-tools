@@ -1,0 +1,18 @@
+{
+  "name": "claude-tools",
+  "owner": {
+    "name": "Robert Thomas"
+  },
+  "metadata": {
+    "description": "Personal Claude Code plugins",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "spitball",
+      "source": "./plugins/spitball",
+      "description": "Lightweight design conversation that produces a small spitball artifact. Forked from obra/superpowers brainstorming with configurable save location and no auto-handoff to a planning skill.",
+      "version": "0.1.0"
+    }
+  ]
+}

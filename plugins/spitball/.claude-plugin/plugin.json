@@ -1,0 +1,9 @@
+{
+  "name": "spitball",
+  "version": "0.1.0",
+  "description": "A lightweight design conversation that ends in a small spitball artifact: north star, constraints, and first few steps. Honest about uncertainty so we don't commit to forward plan that won't survive contact with reality.",
+  "author": {
+    "name": "HQA"
+  },
+  "keywords": ["brainstorming", "design", "planning", "spitball"]
+}
