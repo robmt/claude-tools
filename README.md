@@ -26,7 +26,7 @@ Or install directly:
 
 | Plugin | Version | Description |
 | --- | --- | --- |
-| [spitball](plugins/spitball/) | 0.1.0 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with configurable save location and no auto-handoff to a planning skill. |
+| [spitball](plugins/spitball/) | 0.2.0 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with configurable save location and no auto-handoff to a planning skill. Includes a `spitball-setup` skill for first-run configuration. |
 
 ## Layout
 

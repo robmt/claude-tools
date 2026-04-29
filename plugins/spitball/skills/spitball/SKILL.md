@@ -21,13 +21,13 @@ Every project goes through this process. A todo list, a single-function utility,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Read configuration** - look for `.spitball.json` at the repo root. If present, use the `saveDir` value. If absent, fall back to the default save directory `docs/spitballs/`. See `configuration.md` for the schema.
+1. **Read configuration** - look for `.spitball.json` at the repo root. If present, read `saveDir`, `autoCommit`, and `visualCompanionDefault`. If the file is absent, fall back to defaults (`saveDir`: `docs/spitballs/`, `autoCommit`: `true`, `visualCompanionDefault`: `"ask"`) and briefly mention to the user that the `spitball-setup` skill is available if they want explicit configuration. Do not block on this; proceed with defaults. See `configuration.md` for the schema.
 2. **Explore project context** - check files, docs, recent commits.
-3. **Offer visual companion** (if topic will involve visual questions). This is its own message, not combined with a clarifying question. See the Visual Companion section below.
+3. **Offer visual companion** (if topic will involve visual questions, AND `visualCompanionDefault` is `"ask"`). This is its own message, not combined with a clarifying question. If `visualCompanionDefault` is `"off"`, skip this step entirely. See the Visual Companion section below.
 4. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria.
 5. **Propose 2-3 approaches** with trade-offs and your recommendation.
 6. **Present design** in sections scaled to their complexity, get user approval after each section.
-7. **Write spitball doc** - save to `<saveDir>/YYYY-MM-DD-<topic>-spitball.md` and commit.
+7. **Write spitball doc** - save to `<saveDir>/YYYY-MM-DD-<topic>-spitball.md`. If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
 8. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
 9. **User reviews written spitball** - ask user to review the file before stopping.
 10. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.

@@ -24,16 +24,23 @@ core skill works without it.
 
 ## Configuration
 
-Drop a `.spitball.json` at the repo root to set the save directory:
+The fastest path is to run the `spitball-setup` skill, which walks through the
+options and writes `.spitball.json`:
+
+> "Set up spitball for this project"
+
+Or drop a `.spitball.json` at the repo root yourself:
 
 ```json
 {
-  "saveDir": "docs/spitballs"
+  "saveDir": "docs/spitballs",
+  "autoCommit": true,
+  "visualCompanionDefault": "ask"
 }
 ```
 
-If the file is absent, the default `docs/spitballs/` is used. See
-`skills/spitball/configuration.md` for the full schema.
+If the file is absent, defaults apply. See `skills/spitball/configuration.md`
+for the full schema.
 
 ## Layout
 
@@ -52,6 +59,8 @@ plugins/spitball/
       server.cjs
       start-server.sh
       stop-server.sh
+  skills/spitball-setup/
+    SKILL.md                       # first-run configuration wizard
 ```
 
 ## Attribution
