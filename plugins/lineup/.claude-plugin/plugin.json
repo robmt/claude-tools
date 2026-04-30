@@ -1,0 +1,9 @@
+{
+  "name": "lineup",
+  "version": "0.1.0",
+  "description": "Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: lineup (reviewer) sharpens the next at-bat; at-bat (implementer) does the work with red/green testing.",
+  "author": {
+    "name": "HQA"
+  },
+  "keywords": ["planning", "spitball", "at-bat", "rolling-wave", "tdd"]
+}

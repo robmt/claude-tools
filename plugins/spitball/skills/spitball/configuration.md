@@ -49,11 +49,14 @@ If `.spitball.json` is missing, the spitball skill proceeds with defaults and
 mentions that the `spitball-setup` skill is available. The user may run
 `spitball-setup` at any time to write or update the file.
 
-## Filename
+## Layout
 
-Inside `saveDir`, the spitball is written as
-`YYYY-MM-DD-<topic>-spitball.md`. The `<topic>` slug is derived from the
-spitball's subject. The filename pattern is not configurable in this version.
+Inside `saveDir`, each spitball gets its own folder named
+`YYYY-MM-DD-<topic>/`, containing the file `spitball.md`. The `<topic>`
+slug is derived from the spitball's subject. The folder gives every
+spitball a place for related notes, mockups, or companion-plugin artifacts
+(for example, the `lineup` plugin writes `lineup.md` and at-bat files
+inside this same folder). Layout is not configurable in this version.
 
 ## Continuation
 

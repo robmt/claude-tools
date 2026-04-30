@@ -12,7 +12,13 @@
       "name": "spitball",
       "source": "./plugins/spitball",
       "description": "Lightweight design conversation that produces a small spitball artifact. Forked from obra/superpowers brainstorming with configurable save location and no auto-handoff to a planning skill.",
-      "version": "0.2.0"
+      "version": "0.3.0"
+    },
+    {
+      "name": "lineup",
+      "source": "./plugins/lineup",
+      "description": "Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: lineup (reviewer) sharpens the next at-bat; at-bat (implementer) does the work with red/green testing.",
+      "version": "0.1.0"
     }
   ]
 }
