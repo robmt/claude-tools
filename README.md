@@ -26,7 +26,7 @@ Or install directly:
 
 | Plugin | Version | Description |
 | --- | --- | --- |
-| [spitball](plugins/spitball/) | 0.4.2 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a `spitball-setup` skill for first-run configuration. |
+| [spitball](plugins/spitball/) | 0.4.3 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a `spitball-setup` skill for first-run configuration. |
 | [lineup](plugins/lineup/) | 0.2.1 | Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: `lineup` (reviewer) sharpens the next at-bat; `at-bat` (implementer) does the work with red/green testing. Honors `nestUnderRepoName` for per-repo discovery. |
 
 ## Layout

@@ -25,6 +25,7 @@ Anti-patterns:
 - **"Three approaches" for a task that has one obvious path.** Don't manufacture alternatives. State the one path and recommend it.
 - **Section-by-section approval on a 5-bullet design.** Approval gates are round-trips; on a short design they cost more than they save. Present the whole short design, ask once.
 - **Skipping the design check entirely** because the task feels small. The check exists to surface unexamined assumptions; even "move 4 files" deserves one paragraph + approval.
+- **Reading files the user did not name.** Especially: prospecting in `saveDir` or external notes vaults for "related" content. If a user-named path doesn't exist in the cwd, ask — don't search alternative locations. The user's reference is authoritative.
 
 The skill stays valuable across the whole range by being honest about which mode the current task is in. Most of the design effort goes into matching the form to the work, not into producing more form.
 
@@ -34,7 +35,10 @@ You MUST create a task for each of these items and complete them in order:
 
 1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, and `repoRoot`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. See `configuration.md` only if you need the schema for an edge case.
 2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet — you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
-3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Read additional files only when a specific question makes one obviously relevant.
+3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Reads must follow these rules:
+   - Read **only paths the user explicitly named**, at the path they named (relative to the project working directory unless they gave an absolute path).
+   - If a named path does not exist in the cwd, **ask the user** — do not go searching `saveDir`, notes vaults, sibling branches, or any other location for a "similar" file. The user's reference is the only authoritative source for what to read.
+   - **`saveDir` is for writing spitballs, never for reading them.** Don't prospect there for related notes, prior spitballs, or anything else. If you need to know what spitballs exist, ask the user.
 4. **Pick the right mode** — mechanical (one obvious path) or design-bearing (genuine alternatives exist). For mechanical, skip to step 5 with a brief recommendation, no alternatives. For design-bearing, propose 2-3 genuine approaches with trade-offs and your recommendation. Don't invent alternatives to fill a slot.
 5. **Present design.** Mechanical tasks: one short message covering the whole design, then one approval. Design-bearing tasks: break into sections and ask after each section. Per-section gates are for long designs only — on a short design they're wasted round trips.
 6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
@@ -123,7 +127,8 @@ digraph spitball {
 
 **Working in existing codebases:**
 
-- Once the topic is clear, read the specific files the design will touch. Follow existing patterns. Don't pre-explore the whole tree "just in case" — that wastes context and slows the conversation.
+- Once the topic is clear, read the specific files the user named, at the paths they named. Follow existing patterns. Don't pre-explore the whole tree "just in case" — that wastes context and slows the conversation.
+- If a user-named path doesn't exist in the cwd, ask the user where it is. Never go prospecting in `saveDir`, notes vaults, sibling branches, or other paths for a "similar" file. The user's reference is the only authoritative source for what to read.
 - Where existing code has problems that affect the work (e.g., a file that has grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design, the way a good developer improves code they're working in.
 - Don't propose unrelated refactoring. Stay focused on what serves the current goal.
 
