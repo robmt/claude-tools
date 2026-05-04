@@ -99,13 +99,35 @@ def main():
         effective = os.path.join(save_dir, rname)
 
     lineup_active = False
+    live_spitballs = []
     try:
         eff = Path(effective)
         if eff.is_dir():
+            candidates = []
             for child in eff.iterdir():
-                if child.is_dir() and (child / "lineup.md").exists():
+                if not child.is_dir():
+                    continue
+                if not (child / "spitball.md").exists():
+                    continue
+                lineup_md = child / "lineup.md"
+                if lineup_md.exists():
+                    try:
+                        head = lineup_md.read_text(errors="replace").lstrip()
+                        if head.startswith("Status: Complete"):
+                            continue
+                    except OSError:
+                        pass
                     lineup_active = True
-                    break
+                try:
+                    mtime = child.stat().st_mtime
+                except OSError:
+                    mtime = 0
+                candidates.append((mtime, child))
+            candidates.sort(key=lambda t: t[0], reverse=True)
+            live_spitballs = [
+                {"name": c.name, "path": str(c), "mtime": m}
+                for m, c in candidates
+            ]
     except OSError:
         pass
 
@@ -117,6 +139,7 @@ def main():
         "effectiveSaveDir": effective,
         "repoRoot": str(root) if root else None,
         "lineupActive": lineup_active,
+        "liveSpitballs": live_spitballs,
     }
     print(json.dumps(result, indent=2))
 

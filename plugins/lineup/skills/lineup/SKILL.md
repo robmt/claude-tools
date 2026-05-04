@@ -34,18 +34,32 @@ Create a task for each item and complete in order:
 
 1. **Discover active lineup.** Run
    `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
-   the JSON for `effectiveSaveDir`, `autoCommit`, and `repoRoot`. Use
-   `effectiveSaveDir` as the **discovery root**. If exit code is
-   non-zero, the cwd is not in a git repo while `nestUnderRepoName:
-   true` — refuse and tell the user.
+   the JSON for `effectiveSaveDir`, `autoCommit`, `repoRoot`, and
+   `liveSpitballs` (an array of `{name, path, mtime}` for every folder
+   under `effectiveSaveDir` that has a `spitball.md` and is not marked
+   `Status: Complete`, sorted by mtime descending — most recently
+   touched first). If exit code is non-zero, the cwd is not in a git
+   repo while `nestUnderRepoName: true` — refuse and tell the user.
 
-   Scan immediate children of the discovery root for folders that
-   contain a `spitball.md`. Among those, the "live" lineups are folders
-   whose `lineup.md` does NOT begin with `Status: Complete`. (A folder
-   without `lineup.md` yet counts as live; this is the first run.)
-   - Zero live folders → stop and tell the user to run spitball first.
-   - Exactly one live folder → use it.
-   - Multiple live folders → ask the user which one to operate on.
+   **Try to infer the target from chat context before asking.** Look at
+   the conversation so far: did the user just run `/spitball` and create
+   a folder? Did they mention a slug, topic, or path that matches a
+   `liveSpitballs[*].name`? If a clear match exists, announce it ("Picking
+   up the `<name>` spitball from earlier in this chat — say if that's
+   wrong.") and use it without prompting. Inference rules:
+   - Exact slug or path match in recent messages → use it, announce.
+   - Topic words match a folder name (e.g., user said "the auth
+     rewrite" and `2026-05-04-auth-rewrite` is live) → use it, announce.
+   - The most recent message in this session was a `/spitball`
+     hand-back referencing a folder under `effectiveSaveDir` → use it,
+     announce.
+   - Ambiguous or no chat signal → fall through to the rules below.
+
+   Without a chat-context match:
+   - Zero `liveSpitballs` → stop and tell the user to run spitball first.
+   - Exactly one → use it.
+   - Multiple → list the names (most recent first) and ask the user
+     which one to operate on.
 2. **Verify spitball.md exists** in the target folder. If not, refuse
    to operate; tell the user lineup requires a spitball anchor.
 3. **Read the spitball.** Identify the completion criteria. If the
