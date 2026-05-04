@@ -33,7 +33,7 @@ The skill stays valuable across the whole range by being honest about which mode
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, and `repoRoot`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. See `configuration.md` only if you need the schema for an edge case.
+1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, `repoRoot`, and `lineupActive`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. `lineupActive` is `true` when any sibling spitball folder under `effectiveSaveDir` already has a `lineup.md` — use it in step 8's hand-back message. See `configuration.md` only if you need the schema for an edge case.
 2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet — you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
 3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Reads must follow these rules:
    - Read **only paths the user explicitly named**, at the path they named (relative to the project working directory unless they gave an absolute path).
@@ -155,6 +155,12 @@ Fix any issues inline. No need to re-review, just fix and move on.
 After the spitball review loop passes, ask the user to review the written file before stopping:
 
 > "Spitball written and committed to `<path>`. Please review it and let me know if you want to make any changes. When you are ready to start work or build a plan, kick off the next thing yourself."
+
+If `lineupActive` was `true` in step 1's config output, append one short line to that message:
+
+> "(Lineup is in use here — run `/lineup` when you're ready to fold this into the rolling work view.)"
+
+Do NOT add the nudge when `lineupActive` is `false`. The nudge is a passive pointer, not a recommendation; never auto-invoke `lineup`.
 
 Wait for the user's response. If they request changes, make them and re-run the review loop. Only stop once the user approves.
 

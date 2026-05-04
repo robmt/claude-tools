@@ -98,6 +98,17 @@ def main():
         rname = repo_name(root)
         effective = os.path.join(save_dir, rname)
 
+    lineup_active = False
+    try:
+        eff = Path(effective)
+        if eff.is_dir():
+            for child in eff.iterdir():
+                if child.is_dir() and (child / "lineup.md").exists():
+                    lineup_active = True
+                    break
+    except OSError:
+        pass
+
     result = {
         "saveDir": save_dir,
         "autoCommit": config["autoCommit"],
@@ -105,6 +116,7 @@ def main():
         "repoName": rname,
         "effectiveSaveDir": effective,
         "repoRoot": str(root) if root else None,
+        "lineupActive": lineup_active,
     }
     print(json.dumps(result, indent=2))
 

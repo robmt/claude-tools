@@ -11,14 +11,14 @@
     {
       "name": "spitball",
       "source": "./plugins/spitball",
-      "description": "Lightweight design conversation that produces a small spitball artifact. Forked from obra/superpowers brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a spitball-setup skill for first-run configuration.",
-      "version": "0.4.3"
+      "description": "Lightweight design conversation that produces a small spitball artifact. Forked from obra/superpowers brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a spitball-setup skill for first-run configuration. Detects whether lineup is in use here and surfaces a passive pointer in the hand-back.",
+      "version": "0.4.4"
     },
     {
       "name": "lineup",
       "source": "./plugins/lineup",
       "description": "Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: lineup (reviewer) sharpens the next at-bat; at-bat (implementer) does the work with red/green testing. Honors spitball's nestUnderRepoName for per-repo discovery in shared save dirs.",
-      "version": "0.2.1"
+      "version": "0.2.2"
     }
   ]
 }
