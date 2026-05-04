@@ -17,8 +17,8 @@
     {
       "name": "lineup",
       "source": "./plugins/lineup",
-      "description": "Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: lineup (reviewer) sharpens the next at-bat AND verifies a just-completed at-bat's Definition of done before promoting; at-bat (implementer) does the work with red/green testing and hands off to lineup unconditionally on completion. autoContinue config governs the lineup -> at-bat side of the loop.",
-      "version": "0.5.0"
+      "description": "Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Three skills: lineup (reviewer) sharpens the next at-bat AND verifies a just-completed at-bat's Definition of done before promoting; at-bat (implementer) does the work with red/green testing and hands off to lineup unconditionally on completion; postmortem reflects on the spitball + at-bat history when a spitball is delivered or when something broke. autoContinue config governs the lineup -> at-bat side of the loop.",
+      "version": "0.6.0"
     }
   ]
 }
