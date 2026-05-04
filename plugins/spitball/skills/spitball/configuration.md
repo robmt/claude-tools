@@ -17,8 +17,15 @@ Either file may be absent. If both are absent, hardcoded defaults apply.
 | Key                  | Type    | Default            | What it does                                                                                  |
 |----------------------|---------|--------------------|-----------------------------------------------------------------------------------------------|
 | `saveDir`            | string  | `docs/spitballs/`  | Directory the spitball file is written to. Repo-relative or absolute.                         |
-| `autoCommit`         | bool    | `true`             | Commit the spitball file to git after writing. Set `false` if `saveDir` is not a git repo.    |
+| `commitSpitball`     | bool    | `true`             | Commit the spitball doc to git after writing. Set `false` if `saveDir` is not a git repo.     |
+| `commitAtBat`        | bool    | `true`             | Commit each at-bat (test+impl+file-move) as a single commit. `true` keeps each at-bat individually revertable. |
 | `nestUnderRepoName`  | bool    | `false`            | When true, save path becomes `<saveDir>/<repo-name>/YYYY-MM-DD-<topic>/spitball.md`. See below. |
+| `autoContinue`       | string  | `"prompt"`         | `"never"`, `"prompt"`, or `"always"`. Governs the lineup -> at-bat handoff (at-bat -> lineup is mandatory and not configurable). See "Continuation" below. |
+
+Legacy: a key called `autoCommit` is honored as a fallback for `commitSpitball`
+when `commitSpitball` is not explicitly set in the same layer. This lets users
+who answered "no commit" at setup time keep that meaning for the spitball doc
+without accidentally suppressing per-at-bat commits.
 
 Unknown keys are ignored, so the file is forward-compatible if more knobs are
 added later.
@@ -53,7 +60,7 @@ repo's name. This lets a single shared `saveDir` (e.g.,
 
 **Lineup discovery interaction:** the `lineup` plugin honors the same setting.
 When `nestUnderRepoName: true`, lineup scans only `<saveDir>/<repo-name>/`,
-not the full `<saveDir>` — so running `lineup` in repo X only sees X's
+not the full `<saveDir>` - so running `lineup` in repo X only sees X's
 spitballs even if the saveDir is shared with other repos.
 
 ## Examples
@@ -65,7 +72,7 @@ spitballs even if the saveDir is shared with other repos.
 ```json
 {
   "saveDir": "docs/spitballs",
-  "autoCommit": true
+  "commitSpitball": true
 }
 ```
 
@@ -79,7 +86,7 @@ repo.
 ```json
 {
   "saveDir": "/mnt/notes/spitballs",
-  "autoCommit": false,
+  "commitSpitball": false,
   "nestUnderRepoName": true
 }
 ```
@@ -96,7 +103,7 @@ discovery in either repo only sees that repo's spitballs.
 ```json
 {
   "saveDir": "/mnt/notes/spitballs",
-  "autoCommit": false,
+  "commitSpitball": false,
   "nestUnderRepoName": true
 }
 ```
@@ -106,7 +113,7 @@ discovery in either repo only sees that repo's spitballs.
 ```json
 {
   "saveDir": "docs/spitballs",
-  "autoCommit": true,
+  "commitSpitball": true,
   "nestUnderRepoName": false
 }
 ```
@@ -131,5 +138,22 @@ inside each spitball folder is not configurable in this version.
 
 ## Continuation
 
-There is no automatic continuation skill. After the spitball is written and
-approved, the skill stops and hands control back to the user.
+Spitball itself never auto-invokes a downstream skill: after the spitball is
+written and approved, it stops and hands control back to the user. (When
+`lineupActive` is true for the current `effectiveSaveDir`, spitball's hand-back
+includes a passive pointer to `/lineup`, but does not invoke it.)
+
+The lineup <-> at-bat loop has its own continuation rules:
+
+- **at-bat -> lineup is mandatory.** When at-bat finishes a unit of work, it
+  hands off to lineup, which verifies the at-bat's Definition of done before
+  promoting. This handoff is not user-configurable - bypassing the verifier
+  lets a broken at-bat ship as "done."
+- **lineup -> at-bat is governed by `autoContinue`.**
+  - `"never"` - lineup writes a `**Next step:** run /at-bat` anchor and
+    stops. The user types the next slash command.
+  - `"prompt"` (default) - lineup ends with a question
+    `Continue? (yes / session / always / no)`. `session` treats the rest of
+    the conversation as `"always"`. `always` writes
+    `autoContinue: "always"` to `<repoRoot>/.spitball.json` for persistence.
+  - `"always"` - lineup invokes at-bat directly after promoting, no prompt.

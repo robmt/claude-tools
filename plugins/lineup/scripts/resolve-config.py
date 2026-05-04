@@ -19,9 +19,31 @@ from pathlib import Path
 
 DEFAULTS = {
     "saveDir": "docs/spitballs",
-    "autoCommit": True,
+    "commitSpitball": True,
+    "commitAtBat": True,
     "nestUnderRepoName": False,
+    "autoContinue": "prompt",
 }
+
+VALID_AUTO_CONTINUE = {"never", "prompt", "always"}
+
+
+def apply_layer(config, layer):
+    """Merge one config layer into the running config.
+
+    Honors a legacy ``autoCommit`` key by mapping it to ``commitSpitball``
+    when no explicit ``commitSpitball`` is set in the same layer. This lets
+    users who answered "no commit" at setup time keep that meaning for the
+    spitball doc without accidentally suppressing per-at-bat commits, which
+    are needed for revertable history.
+    """
+    if not isinstance(layer, dict):
+        return
+    if "autoCommit" in layer and "commitSpitball" not in layer:
+        config["commitSpitball"] = layer["autoCommit"]
+    for k, v in layer.items():
+        if k in DEFAULTS:
+            config[k] = v
 
 
 def load_json(path: Path):
@@ -94,13 +116,12 @@ def main():
     root = repo_root()
 
     config = dict(DEFAULTS)
-    home_cfg = load_json(Path.home() / ".spitball.json")
-    if isinstance(home_cfg, dict):
-        config.update({k: v for k, v in home_cfg.items() if k in DEFAULTS})
+    apply_layer(config, load_json(Path.home() / ".spitball.json"))
     if root:
-        repo_cfg = load_json(root / ".spitball.json")
-        if isinstance(repo_cfg, dict):
-            config.update({k: v for k, v in repo_cfg.items() if k in DEFAULTS})
+        apply_layer(config, load_json(root / ".spitball.json"))
+
+    if config["autoContinue"] not in VALID_AUTO_CONTINUE:
+        config["autoContinue"] = DEFAULTS["autoContinue"]
 
     save_dir = config["saveDir"]
     if not os.path.isabs(save_dir):
@@ -154,8 +175,10 @@ def main():
 
     result = {
         "saveDir": save_dir,
-        "autoCommit": config["autoCommit"],
+        "commitSpitball": config["commitSpitball"],
+        "commitAtBat": config["commitAtBat"],
         "nestUnderRepoName": config["nestUnderRepoName"],
+        "autoContinue": config["autoContinue"],
         "repoName": rname,
         "effectiveSaveDir": effective,
         "repoRoot": str(root) if root else None,

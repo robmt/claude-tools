@@ -26,8 +26,8 @@ Or install directly:
 
 | Plugin | Version | Description |
 | --- | --- | --- |
-| [spitball](plugins/spitball/) | 0.5.0 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a `spitball-setup` skill for first-run configuration. Detects whether `lineup` is in use here and surfaces a passive pointer in the hand-back. |
-| [lineup](plugins/lineup/) | 0.4.0 | Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: `lineup` (reviewer) sharpens the next at-bat; `at-bat` (implementer) does the work with red/green testing. Honors `nestUnderRepoName` for per-repo discovery. Infers target spitball from chat context when possible. |
+| [spitball](plugins/spitball/) | 0.6.0 | Lightweight design conversation that produces a small spitball artifact. Forked from `obra/superpowers` brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, separate `commitSpitball`/`commitAtBat` flags, and an `autoContinue` setting that controls how the lineup -> at-bat handoff works. Includes a `spitball-setup` skill for first-run configuration. ASCII-only file output for cross-platform safety. |
+| [lineup](plugins/lineup/) | 0.5.0 | Companion to spitball. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a spitball's destination. Two skills: `lineup` (reviewer) sharpens the next at-bat AND verifies a just-completed at-bat's Definition of done before promoting; `at-bat` (implementer) does the work with red/green testing and hands off to lineup unconditionally on completion. `autoContinue` config governs the lineup -> at-bat side of the loop. |
 
 ## Layout
 

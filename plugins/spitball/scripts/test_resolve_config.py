@@ -78,5 +78,43 @@ class RepoNameTests(unittest.TestCase):
             self.assertEqual(rc.repo_name(Path("/tmp/myrepo")), "myrepo")
 
 
+class ApplyLayerTests(unittest.TestCase):
+    def _base(self):
+        return dict(rc.DEFAULTS)
+
+    def test_none_layer_is_noop(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, None)
+        self.assertEqual(cfg, self._base())
+
+    def test_legacy_autoCommit_maps_to_commitSpitball(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"autoCommit": False})
+        self.assertFalse(cfg["commitSpitball"])
+        self.assertTrue(cfg["commitAtBat"])  # at-bat default preserved
+
+    def test_explicit_commitSpitball_wins_over_legacy(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"autoCommit": False, "commitSpitball": True})
+        self.assertTrue(cfg["commitSpitball"])
+
+    def test_commitAtBat_independent_of_legacy_autoCommit(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"autoCommit": False, "commitAtBat": False})
+        self.assertFalse(cfg["commitSpitball"])  # via legacy
+        self.assertFalse(cfg["commitAtBat"])  # explicit
+
+    def test_unknown_keys_ignored(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"someBogusKey": "value"})
+        self.assertEqual(cfg, self._base())
+
+    def test_repo_layer_overrides_home_layer(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"commitAtBat": False})
+        rc.apply_layer(cfg, {"commitAtBat": True})
+        self.assertTrue(cfg["commitAtBat"])
+
+
 if __name__ == "__main__":
     unittest.main()

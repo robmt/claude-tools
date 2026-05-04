@@ -5,12 +5,12 @@ going and what done looks like. The lineup owns the next three batters.
 
 Three slots, hard cap:
 
-- **At Bat** — concrete, currently being worked
-- **On Deck** — fuzzy, next up
-- **In the Hole** — very fuzzy, after that
+- **At Bat** - concrete, currently being worked
+- **On Deck** - fuzzy, next up
+- **In the Hole** - very fuzzy, after that
 
 Anything past In the Hole is in the dugout: not tracked, not speculated
-about. The lineup never reaches the end of itself by design — completion
+about. The lineup never reaches the end of itself by design - completion
 comes from the spitball's criteria, not from running out of batters.
 
 ## Install
@@ -48,7 +48,7 @@ docs/spitballs/2026-04-29-foo/
     003-validate-schema.md
 ```
 
-`lineup.md` is short — a pointer to the current at-bat file plus inline
+`lineup.md` is short - a pointer to the current at-bat file plus inline
 bullets for On Deck and In the Hole. Only the **At Bat** slot ever gets a
 file; fuzzy slots stay as bullets so we don't over-specify work we don't
 yet understand.
@@ -59,11 +59,11 @@ yet understand.
 
 Reads the spitball and current state, then:
 
-1. Checks the spitball's completion criteria. If met → marks the lineup
+1. Checks the spitball's completion criteria. If met -> marks the lineup
    `Status: Complete` and stops.
-2. Otherwise: promotes On Deck → At Bat (creates the next `NNN-<slug>.md`
+2. Otherwise: promotes On Deck -> At Bat (creates the next `NNN-<slug>.md`
    file with full structure including a required Test plan), promotes In
-   the Hole → On Deck, drafts a new In the Hole bullet.
+   the Hole -> On Deck, drafts a new In the Hole bullet.
 3. Stops. Does not auto-invoke `at-bat`.
 
 The reviewer enforces red/green test plans when sharpening. If a test
@@ -76,7 +76,7 @@ Reads the current At Bat file and does the work:
 
 1. **Red.** Writes the failing test described in the Test plan.
 2. **Green.** Implements until the test passes.
-3. Verifies scope boundary — only this at-bat, nothing more.
+3. Verifies scope boundary - only this at-bat, nothing more.
 4. Marks complete and moves the file to `completed/`.
 5. Stops. Does not auto-invoke `lineup` to refresh.
 
@@ -95,16 +95,19 @@ Filesystem-only. No pointer files, no `.lineup.json`. The skills scan
 `<saveDir>` for folders containing a `lineup.md` without a `Status:
 Complete` marker:
 
-- One live → use it
-- Many → ask the user which
-- None → tell user to run spitball first
+- One live -> use it
+- Many -> ask the user which
+- None -> tell user to run spitball first
 
 ## Configuration
 
 `lineup` reads spitball's merged config (`~/.spitball.json` overlaid by
-`<repoRoot>/.spitball.json`) for shared values: `saveDir`, `autoCommit`,
-and `nestUnderRepoName`. It does not introduce its own config file. If
-`nestUnderRepoName: true`, lineup discovery scans only
+`<repoRoot>/.spitball.json`) for shared values: `saveDir`, `commitAtBat`,
+`autoContinue`, and `nestUnderRepoName`. It does not introduce its own
+config file. The legacy `autoCommit` key is honored as a fallback for
+`commitSpitball` only - the per-at-bat commit behavior is now
+controlled separately by `commitAtBat` so each at-bat lands as a single
+revertable commit. If `nestUnderRepoName: true`, lineup discovery scans only
 `<saveDir>/<repo-name>/`, so working in repo X only surfaces X's
 spitballs even when the saveDir is shared across repos. See the spitball
 plugin's `configuration.md` for the full schema. If a lineup-specific

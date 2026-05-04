@@ -10,7 +10,7 @@ Forked from `obra/superpowers/skills/brainstorming`. Intentional changes:
 - Configurable save location (per-repo or central with optional repo-name nesting).
 - The skill stops after the spitball is written; it does not auto-invoke any
   planning or implementation skill. Continuation is the user's call.
-- The visual companion (browser-based mockups) was removed — text-only.
+- The visual companion (browser-based mockups) was removed - text-only.
 
 ## Install
 
@@ -24,8 +24,8 @@ Requires `python3` and `git` on PATH (used by the config-resolution helper scrip
 
 Two files, merged per-key:
 
-- `~/.spitball.json` — global default for every project.
-- `<repoRoot>/.spitball.json` — per-repo override.
+- `~/.spitball.json` - global default for every project.
+- `<repoRoot>/.spitball.json` - per-repo override.
 
 The fastest path is to run the `spitball-setup` skill, which asks scope
 (global vs. this repo) first and writes to the right file:
@@ -37,18 +37,25 @@ Or write the file yourself. Global example for a shared, central save dir:
 ```json
 {
   "saveDir": "/mnt/notes/spitballs",
-  "autoCommit": false,
-  "nestUnderRepoName": true
+  "commitSpitball": false,
+  "commitAtBat": true,
+  "nestUnderRepoName": true,
+  "autoContinue": "prompt"
 }
 ```
 
 With `nestUnderRepoName: true`, spitballs land at
 `<saveDir>/<repo-name>/YYYY-MM-DD-<topic>/spitball.md`, where `<repo-name>`
 is parsed from `git remote get-url origin` (e.g., `robmt-claude-tools`),
-falling back to the repo basename. Lineup discovery honors the same flag.
+falling back to the repo basename. Routing markers like Azure DevOps's
+`_git/`, Bitbucket Server's `scm/`, and Azure SSH's `v3/` are stripped,
+so URLs like `https://dev.azure.com/org/project/_git/repo` produce
+`project-repo`. Lineup discovery honors the same flag.
 
 If both files are absent, defaults apply (`saveDir`: `docs/spitballs/`,
-`autoCommit`: `true`, `nestUnderRepoName`: `false`). See
+`commitSpitball`: `true`, `commitAtBat`: `true`, `nestUnderRepoName`:
+`false`, `autoContinue`: `"prompt"`). The legacy `autoCommit` key still
+works as a synonym for `commitSpitball`. See
 `skills/spitball/configuration.md` for the full schema.
 
 ## Layout

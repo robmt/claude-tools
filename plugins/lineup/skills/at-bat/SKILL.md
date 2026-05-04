@@ -12,13 +12,20 @@ the work. The two are deliberately separate so the user drives the loop.
 <HARD-GATE>
 This skill operates ONLY on the current At Bat file. It does not read
 On Deck, In the Hole, or any future slot. It does not modify the lineup
-state. It does not promote slots. When done, it stops — the user
-invokes `lineup` next if they want to advance.
+state. It does not promote slots. When done, it MUST invoke `lineup` -
+this handoff is mandatory and not user-configurable. Lineup is the
+verifier of at-bat's self-reported completion; bypassing it lets a
+broken at-bat ship as "done." It NEVER invokes any other implementation
+skill.
 </HARD-GATE>
+
+## Output rule: ASCII only
+
+All files this skill writes (test files, code edits, commit messages, the hand-off block) MUST use ASCII characters only. No emoji, no em-dashes, no curly quotes, no arrows, no non-breaking spaces. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses. This keeps content portable across editors, terminals, and operating systems.
 
 ## TDD discipline (rigid)
 
-This skill is a rigid TDD skill. Red → Green is not negotiable when the
+This skill is a rigid TDD skill. Red -> Green is not negotiable when the
 at-bat has a Test plan section.
 
 1. **Red first.** Write the failing test BEFORE implementation. Run it.
@@ -28,7 +35,7 @@ at-bat has a Test plan section.
    pass.
 3. **No gold-plating.** Do not refactor, clean up, or add features past
    the at-bat's Definition of done. Anything outside scope goes back to
-   the lineup as a future bullet — not into this at-bat.
+   the lineup as a future bullet - not into this at-bat.
 
 If the at-bat's Test plan section says "No automated test", run the
 manual verification steps explicitly (or ask the user to) and record the
@@ -44,7 +51,7 @@ test.
 - **"This test is hard to write, I'll skip it."** No. If the test is
   hard, that is a signal the design is unclear. Stop and re-read the
   at-bat. If the at-bat is genuinely untestable but the Test plan
-  section claims red/green, push back to the user — the reviewer should
+  section claims red/green, push back to the user - the reviewer should
   have caught this.
 - **"I'll just refresh the lineup at the end."** No. This skill does
   not invoke `lineup`. The user calls the next play.
@@ -55,17 +62,17 @@ Create a task for each item and complete in order:
 
 1. **Discover active lineup.** Run
    `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
-   the JSON for `effectiveSaveDir`, `autoCommit`, and `repoRoot`. Use
-   `effectiveSaveDir` as the **discovery root**. If exit code is
-   non-zero, the cwd is not in a git repo while `nestUnderRepoName:
-   true` — refuse and tell the user.
+   the JSON for `effectiveSaveDir`, `commitAtBat`, `autoContinue`, and
+   `repoRoot`. Use `effectiveSaveDir` as the **discovery root**. If exit
+   code is non-zero, the cwd is not in a git repo while
+   `nestUnderRepoName: true` - refuse and tell the user.
 
    Scan immediate children of the discovery root for folders that
    contain `lineup.md` without a `Status: Complete` marker.
-   - Zero live → tell user to run `lineup` (or `spitball` first if no
+   - Zero live -> tell user to run `lineup` (or `spitball` first if no
      spitball exists).
-   - Exactly one live → use it.
-   - Multiple live → ask the user which one.
+   - Exactly one live -> use it.
+   - Multiple live -> ask the user which one.
 2. **Read the lineup.** Find the At Bat pointer in `lineup.md`. If the
    At Bat slot is empty (no pointer), tell the user to run `lineup`
    first to sharpen one.
@@ -91,11 +98,31 @@ Create a task for each item and complete in order:
    at-bat file under a `## Verification` header.
 9. **Move file to `completed/`.** Use `git mv` so history is preserved.
    The filename does not change; only its location.
-10. **Commit if `autoCommit` is true** (default). One commit covering
+10. **Commit if `commitAtBat` is true** (default). One commit covering
     the implementation, the test, and the file move. Suggested message:
-    `At-bat NNN: <slug>`.
-11. **Hand back to user.** Tell them the at-bat is complete and they
-    can run `lineup` to sharpen the next one. Do NOT invoke `lineup`.
+    `At-bat NNN: <slug>`. The single-commit boundary matters: each
+    at-bat should be revertable as one unit, so do not split this into
+    multiple commits or fold it into an unrelated commit.
+11. **Hand off to lineup for verification.** End your at-bat output
+    with a short status block in EXACTLY this shape:
+
+    ```
+    ## At-bat NNN finished - handing to lineup for verification
+
+    <2-5 bullet summary of what shipped: artifacts, build/test status,
+    commit state, anything left uncommitted>
+    ```
+
+    Then immediately read `${CLAUDE_PLUGIN_ROOT}/skills/lineup/SKILL.md`
+    and execute its checklist starting at step 1. Lineup's step 5 will
+    detect your hand-off line and run verification mode against the
+    just-completed at-bat. If verification passes, lineup promotes the
+    next at-bat and applies its `autoContinue` rules. If verification
+    fails, lineup stops with a failure report and does not promote.
+
+    This handoff is mandatory - do not stop after the status block. Do
+    NOT add a "Next step" line; lineup owns the user-facing
+    call-to-action from here on.
 
 ## Scope verification
 
@@ -107,7 +134,7 @@ Before committing, ask yourself:
 - Did I refactor unrelated code "while I was there"?
 
 If yes to any, revert those changes. They are not part of this at-bat.
-If they're worth doing, surface them to the user — the reviewer can add
+If they're worth doing, surface them to the user - the reviewer can add
 them as future bullets.
 
 ## Process Flow
@@ -129,8 +156,7 @@ digraph atbat {
     "Verify scope boundary" [shape=box];
     "Manual verification" [shape=box];
     "git mv to completed/" [shape=box];
-    "Commit if autoCommit" [shape=box];
-    "Hand back to user" [shape=doublecircle];
+    "Commit if commitAtBat" [shape=box];
 
     "Discover active lineup" -> "Has At Bat pointer?";
     "Has At Bat pointer?" -> "Tell user to run lineup" [label="no"];
@@ -148,8 +174,9 @@ digraph atbat {
     "Test passes?" -> "Verify scope boundary" [label="yes"];
     "Verify scope boundary" -> "Manual verification";
     "Manual verification" -> "git mv to completed/";
-    "git mv to completed/" -> "Commit if autoCommit";
-    "Commit if autoCommit" -> "Hand back to user";
+    "git mv to completed/" -> "Commit if commitAtBat";
+    "Commit if commitAtBat" -> "Hand off to lineup";
+    "Hand off to lineup" [shape=doublecircle];
 }
 ```
 
@@ -160,9 +187,13 @@ merged config. The script reads `~/.spitball.json` and
 `<repoRoot>/.spitball.json` over defaults and returns JSON. See the
 spitball plugin's `configuration.md` for the schema. At-bat uses:
 
-- `effectiveSaveDir` — discovery root for the active lineup.
-- `autoCommit` — whether to commit the work after completion.
-- `repoRoot` — repo root path (used for `git mv` and commit operations).
+- `effectiveSaveDir` - discovery root for the active lineup.
+- `commitAtBat` - whether to commit the test+impl+file-move together
+  after the at-bat passes (default `true`). Defaults to true so each
+  at-bat is revertable as a single commit.
+- `autoContinue` - passed through to lineup at hand-off; lineup decides
+  whether to advance into the next at-bat after verifying.
+- `repoRoot` - repo root path (used for `git mv` and commit operations).
 
 There is no `.lineup.json`. Lineup and at-bat share spitball's config.
 

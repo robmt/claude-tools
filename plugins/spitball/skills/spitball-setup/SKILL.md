@@ -1,11 +1,15 @@
 ---
 name: spitball-setup
-description: "Configure the spitball skill. Use when the user says 'configure spitball', 'set up spitball', 'spitball setup', 'spitball first run', 'where should spitballs go', or wants to change spitball defaults (save directory, auto-commit, central vs per-repo storage). Writes `~/.spitball.json` (global default) or `<repoRoot>/.spitball.json` (per-repo override) depending on scope chosen by the user."
+description: "Configure the spitball/lineup/at-bat skills. Use when the user says 'configure spitball', 'set up spitball', 'spitball setup', 'spitball first run', 'where should spitballs go', or wants to change defaults (save directory, commit behavior, auto-continue between skills, central vs per-repo storage). Writes `~/.spitball.json` (global default) or `<repoRoot>/.spitball.json` (per-repo override) depending on scope chosen by the user."
 ---
 
 # Spitball Setup
 
 A short configuration wizard. Asks a few questions one at a time, then writes the appropriate config file.
+
+## Output rule: ASCII only
+
+The config file this skill writes is JSON, which is already ASCII-friendly. User-facing prose written by this skill (questions, confirmations, the "Done" message) MUST also use ASCII only: no emoji, no em-dashes, no curly quotes, no arrows. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes. This keeps the wizard portable across editors, terminals, and operating systems.
 
 Spitball reads two config files and merges them per-key: `~/.spitball.json` (global) is the default for every project, and `<repoRoot>/.spitball.json` (per-repo) overrides any keys it sets. See `configuration.md` in the spitball skill for the full schema and resolution rules.
 
@@ -27,8 +31,8 @@ Ask each question on its own, wait for the answer, then move on. Do not bundle q
 
 Store the answer as `scope`. The two paths diverge here:
 
-- `global` → continue with question 2 in "Global path" below.
-- `repo` → continue with question 2 in "Per-repo path" below.
+- `global` -> continue with question 2 in "Global path" below.
+- `repo` -> continue with question 2 in "Per-repo path" below.
 
 ### Global path
 
@@ -40,13 +44,15 @@ Store the answer as `scope`. The two paths diverge here:
 
 Store as `saveDir`.
 
-#### 3g. Auto-commit
+#### 3g. Commit the spitball doc?
 
-> After spitball writes a new file, should it auto-commit to git?
+> After spitball writes a new file (the design doc itself), should it auto-commit to git?
 >
 > Default: `no` for central locations (the saveDir usually isn't a git repo).
 
-Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `autoCommit`.
+Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `commitSpitball`.
+
+This setting governs ONLY the spitball doc. The at-bat work (test + impl + file move) is committed separately and is controlled by `commitAtBat` - see question 5.
 
 #### 4g. Nest under repo name
 
@@ -58,6 +64,25 @@ Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `nestUn
 
 If the user picks `yes` and the current cwd is not in a git repo, warn them: spitball will refuse to run from non-git directories when this flag is on. Setup itself still proceeds (the global config can be written from anywhere).
 
+#### 5g. Commit each at-bat?
+
+> When at-bat finishes a unit of work, should it commit the test+impl+file-move as a single commit?
+>
+> Default: `yes`. Each at-bat as one commit means each at-bat is revertable independently - strongly recommended unless you have a specific reason to defer commits.
+
+Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `commitAtBat`.
+
+#### 6g. Auto-continue between skills?
+
+> When at-bat hands off to lineup, and lineup wants to step into the next at-bat, how should the handoff work?
+>
+> Options:
+> - `never` - show a "Next step: run /at-bat" anchor and wait. The user always types the next slash command.
+> - `prompt` (default) - at each handoff, ask `Continue? (yes / session / always / no)`. Lightest friction with full control.
+> - `always` - chain skills automatically without asking. Smoothest UX, but you give up the inspection beat between slots.
+
+Store as `autoContinue` with the literal string value `"never"`, `"prompt"`, or `"always"`. (Note: at-bat -> lineup is mandatory regardless of this setting; lineup verifies at-bat's completion criteria. This setting governs only the lineup -> at-bat transition.)
+
 ### Per-repo path
 
 #### 2r. Save directory (in-repo)
@@ -68,17 +93,33 @@ If the user picks `yes` and the current cwd is not in a git repo, warn them: spi
 
 Store as `saveDir`.
 
-#### 3r. Auto-commit
+#### 3r. Commit the spitball doc?
 
-> After spitball writes a new file, should it auto-commit to git?
+> After spitball writes a new file (the design doc itself), should it auto-commit to git?
 >
 > Default: `yes`.
 
-Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `autoCommit`.
+Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `commitSpitball`.
 
-#### 4r. Nest under repo name
+#### 4r. Commit each at-bat?
 
-Skip this question. For per-repo configs the default `nestUnderRepoName: false` is correct — there's only one repo writing here.
+> When at-bat finishes a unit of work, should it commit the test+impl+file-move as a single commit?
+>
+> Default: `yes`. Each at-bat as one commit means each at-bat is revertable independently.
+
+Accept `yes`/`y`/`true` as `true`, `no`/`n`/`false` as `false`. Store as `commitAtBat`.
+
+#### 5r. Auto-continue between skills?
+
+> When lineup wants to step into the next at-bat, how should the handoff work?
+>
+> Options: `never`, `prompt` (default), `always`. See the global path's question 6g for full descriptions.
+
+Store as `autoContinue` (string).
+
+#### 6r. Nest under repo name
+
+Skip this question. For per-repo configs the default `nestUnderRepoName: false` is correct - there's only one repo writing here.
 
 If the user explicitly asks for nesting in a per-repo config (unusual but valid as an override on top of a global default), accept it and add the key.
 
@@ -94,8 +135,10 @@ Global example:
 ```json
 {
   "saveDir": "/mnt/notes/spitballs",
-  "autoCommit": false,
-  "nestUnderRepoName": true
+  "commitSpitball": false,
+  "commitAtBat": true,
+  "nestUnderRepoName": true,
+  "autoContinue": "prompt"
 }
 ```
 
@@ -104,7 +147,9 @@ Per-repo example:
 ```json
 {
   "saveDir": "docs/spitballs",
-  "autoCommit": true
+  "commitSpitball": true,
+  "commitAtBat": true,
+  "autoContinue": "always"
 }
 ```
 

@@ -13,19 +13,23 @@ Start by understanding the current project context, then ask questions one at a 
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
 </HARD-GATE>
 
+## Output rule: ASCII only
+
+All files this skill writes (the spitball.md doc, any commit messages, any user-facing prose) MUST use ASCII characters only. No emoji, no em-dashes, no curly quotes, no arrows, no non-breaking spaces. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses. This keeps content portable across editors, terminals, and operating systems.
+
 ## Right-sizing the ritual
 
 Every task gets a design check. The FORM of that check must scale to the task.
 
-- **Mechanical / one-path** (file move, rename, refactor with no behavior change, config tweak, well-defined transformation): a few bullets describing what happens and one approval. No alternatives, no sectioning, no per-section gates. If you find yourself inventing 2-3 approaches to fill a slot, the task didn't need them — that's theater.
-- **New feature / unsettled shape**: full ritual — 2-3 genuine alternatives, a sectioned design, per-section approval. The gates exist to catch divergence early on a long thought; they earn their weight here.
+- **Mechanical / one-path** (file move, rename, refactor with no behavior change, config tweak, well-defined transformation): a few bullets describing what happens and one approval. No alternatives, no sectioning, no per-section gates. If you find yourself inventing 2-3 approaches to fill a slot, the task didn't need them - that's theater.
+- **New feature / unsettled shape**: full ritual - 2-3 genuine alternatives, a sectioned design, per-section approval. The gates exist to catch divergence early on a long thought; they earn their weight here.
 
 Anti-patterns:
 
 - **"Three approaches" for a task that has one obvious path.** Don't manufacture alternatives. State the one path and recommend it.
 - **Section-by-section approval on a 5-bullet design.** Approval gates are round-trips; on a short design they cost more than they save. Present the whole short design, ask once.
 - **Skipping the design check entirely** because the task feels small. The check exists to surface unexamined assumptions; even "move 4 files" deserves one paragraph + approval.
-- **Reading files the user did not name.** Especially: prospecting in `saveDir` or external notes vaults for "related" content. If a user-named path doesn't exist in the cwd, ask — don't search alternative locations. The user's reference is authoritative.
+- **Reading files the user did not name.** Especially: prospecting in `saveDir` or external notes vaults for "related" content. If a user-named path doesn't exist in the cwd, ask - don't search alternative locations. The user's reference is authoritative.
 
 The skill stays valuable across the whole range by being honest about which mode the current task is in. Most of the design effort goes into matching the form to the work, not into producing more form.
 
@@ -33,15 +37,15 @@ The skill stays valuable across the whole range by being honest about which mode
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, `repoRoot`, and `lineupActive`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. `lineupActive` is `true` when any sibling spitball folder under `effectiveSaveDir` already has a `lineup.md` — use it in step 8's hand-back message. See `configuration.md` only if you need the schema for an edge case.
-2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet — you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
+1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `commitSpitball`, `commitAtBat`, `nestUnderRepoName`, `autoContinue`, `repoName`, `effectiveSaveDir`, `repoRoot`, `lineupActive`, and `liveSpitballs`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` - refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. `lineupActive` is `true` when any sibling spitball folder under `effectiveSaveDir` already has a `lineup.md` - use it in step 8's hand-back message. Spitball uses `commitSpitball` (not `commitAtBat`) for the file-write commit in step 6. See `configuration.md` only if you need the schema for an edge case.
+2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet - you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
 3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Reads must follow these rules:
    - Read **only paths the user explicitly named**, at the path they named (relative to the project working directory unless they gave an absolute path).
-   - If a named path does not exist in the cwd, **ask the user** — do not go searching `saveDir`, notes vaults, sibling branches, or any other location for a "similar" file. The user's reference is the only authoritative source for what to read.
+   - If a named path does not exist in the cwd, **ask the user** - do not go searching `saveDir`, notes vaults, sibling branches, or any other location for a "similar" file. The user's reference is the only authoritative source for what to read.
    - **`saveDir` is for writing spitballs, never for reading them.** Don't prospect there for related notes, prior spitballs, or anything else. If you need to know what spitballs exist, ask the user.
-4. **Pick the right mode** — mechanical (one obvious path) or design-bearing (genuine alternatives exist). For mechanical, skip to step 5 with a brief recommendation, no alternatives. For design-bearing, propose 2-3 genuine approaches with trade-offs and your recommendation. Don't invent alternatives to fill a slot.
-5. **Present design.** Mechanical tasks: one short message covering the whole design, then one approval. Design-bearing tasks: break into sections and ask after each section. Per-section gates are for long designs only — on a short design they're wasted round trips.
-6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
+4. **Pick the right mode** - mechanical (one obvious path) or design-bearing (genuine alternatives exist). For mechanical, skip to step 5 with a brief recommendation, no alternatives. For design-bearing, propose 2-3 genuine approaches with trade-offs and your recommendation. Don't invent alternatives to fill a slot.
+5. **Present design.** Mechanical tasks: one short message covering the whole design, then one approval. Design-bearing tasks: break into sections and ask after each section. Per-section gates are for long designs only - on a short design they're wasted round trips.
+6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `commitSpitball` is `true` (default), commit the file. If `false`, leave it for the user to commit. Note: shared/central save dirs (notes vaults, etc.) are typically not git repos; `commitSpitball: false` is the right answer there.
 7. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
 8. **User reviews written spitball** - ask user to review the file before stopping.
 9. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
@@ -90,7 +94,7 @@ digraph spitball {
 
 **Understanding the idea:**
 
-- The harness usually has `README.md` and `CLAUDE.md` already loaded — work from those. Do not list directories, scan source, or read commits before the user has named the topic. When you do reach for a file, do it lazily, justified by something specific the user just said.
+- The harness usually has `README.md` and `CLAUDE.md` already loaded - work from those. Do not list directories, scan source, or read commits before the user has named the topic. When you do reach for a file, do it lazily, justified by something specific the user just said.
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spitball, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then spitball the first sub-project through the normal design flow. Each sub-project gets its own spitball cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea.
@@ -108,7 +112,7 @@ digraph spitball {
 
 - Once you understand what you're building, present the design.
 - Match the form to the task. Mechanical task: a few bullets, all in one message, one approval. Design-bearing task: sections, with per-section approval.
-- Cover what's relevant. Skip what isn't — a file move doesn't need an "error handling" section, a UI redesign doesn't need a "data model" section. Standard topics for a substantial design: architecture, components, data flow, error handling, testing.
+- Cover what's relevant. Skip what isn't - a file move doesn't need an "error handling" section, a UI redesign doesn't need a "data model" section. Standard topics for a substantial design: architecture, components, data flow, error handling, testing.
 - Be ready to go back and clarify if something doesn't make sense.
 
 **Right-sizing the artifact:**
@@ -127,7 +131,7 @@ digraph spitball {
 
 **Working in existing codebases:**
 
-- Once the topic is clear, read the specific files the user named, at the paths they named. Follow existing patterns. Don't pre-explore the whole tree "just in case" — that wastes context and slows the conversation.
+- Once the topic is clear, read the specific files the user named, at the paths they named. Follow existing patterns. Don't pre-explore the whole tree "just in case" - that wastes context and slows the conversation.
 - If a user-named path doesn't exist in the cwd, ask the user where it is. Never go prospecting in `saveDir`, notes vaults, sibling branches, or other paths for a "similar" file. The user's reference is the only authoritative source for what to read.
 - Where existing code has problems that affect the work (e.g., a file that has grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design, the way a good developer improves code they're working in.
 - Don't propose unrelated refactoring. Stay focused on what serves the current goal.
@@ -138,7 +142,7 @@ digraph spitball {
 
 - Write the validated spitball to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md`, using the `effectiveSaveDir` value from step 1's helper output. The folder gives every spitball a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
 - Use `elements-of-style:writing-clearly-and-concisely` skill if available.
-- If `autoCommit: true`, commit the spitball document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
+- If `commitSpitball: true`, commit the spitball document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
 
 **Spitball Self-Review:**
 After writing the spitball document, look at it with fresh eyes:
@@ -158,7 +162,7 @@ After the spitball review loop passes, ask the user to review the written file b
 
 If `lineupActive` was `true` in step 1's config output, append one short line to that message:
 
-> "(Lineup is in use here — run `/lineup` when you're ready to fold this into the rolling work view.)"
+> "(Lineup is in use here - run `/lineup` when you're ready to fold this into the rolling work view.)"
 
 Do NOT add the nudge when `lineupActive` is `false`. The nudge is a passive pointer, not a recommendation; never auto-invoke `lineup`.
 
