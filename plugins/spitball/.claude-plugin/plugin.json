@@ -1,6 +1,6 @@
 {
   "name": "spitball",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "description": "A lightweight design conversation that ends in a small spitball artifact: north star, constraints, and first few steps. Honest about uncertainty so we don't commit to forward plan that won't survive contact with reality. Supports global and per-repo config with optional repo-name nesting for shared central save dirs.",
   "author": {
     "name": "HQA"

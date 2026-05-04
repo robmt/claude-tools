@@ -3,3 +3,7 @@
 *.swp
 .idea/
 .vscode/
+
+# Python test artifacts
+__pycache__/
+*.pyc

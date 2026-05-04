@@ -50,8 +50,18 @@ def repo_root():
         return None
 
 
+_ROUTING_SEGMENTS = {"_git", "scm", "v3"}
+
+
 def repo_name(root: Path):
-    """Parse remote.origin.url to org-repo; fall back to root basename."""
+    """Derive a stable folder name from remote.origin.url.
+
+    Walks the URL's path segments and joins the last two human-named ones
+    with a dash. Routing markers like Azure DevOps's ``_git``, Bitbucket
+    Server's ``scm``, and Azure SSH's ``v3`` are filtered so URLs like
+    ``https://dev.azure.com/org/project/_git/repo`` produce ``project-repo``
+    instead of ``_git-repo``.
+    """
     try:
         url = subprocess.check_output(
             ["git", "-C", str(root), "remote", "get-url", "origin"],
@@ -60,13 +70,24 @@ def repo_name(root: Path):
         ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         url = ""
-    if url:
-        # git@github.com:org/repo.git -> org/repo
-        # https://github.com/org/repo(.git) -> org/repo
-        m = re.search(r"[:/]([^/:]+/[^/]+?)(?:\.git)?/?$", url)
-        if m:
-            return m.group(1).replace("/", "-")
-    return root.name
+    if not url:
+        return root.name
+
+    path = re.sub(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", "", url)
+    if ":" in path and "/" not in path.split(":", 1)[0]:
+        host, _, rest = path.partition(":")
+        path = f"{host}/{rest}"
+
+    parts = path.split("/")[1:]
+    if parts and parts[-1].endswith(".git"):
+        parts[-1] = parts[-1][:-4]
+    parts = [p for p in parts if p and p not in _ROUTING_SEGMENTS]
+
+    if not parts:
+        return root.name
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[-2]}-{parts[-1]}"
 
 
 def main():
