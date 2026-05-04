@@ -92,8 +92,8 @@ Create a task for each item and complete in order:
    and stop. Tell the user the spitball is delivered.
 7. **Promote.** Otherwise:
    - Promote On Deck -> At Bat. Create the next `NNN-<slug>.md` file in
-     the lineup folder with the full required structure (see "At-bat
-     file structure" below). Counter is the next unused integer for this
+     the lineup folder with the full required structure (see the
+     `templates/at-bat.md` sidecar). Counter is the next unused integer for this
      folder; never reuse, never reset.
    - Promote In the Hole -> On Deck (inline bullet in `lineup.md`).
    - Draft a new In the Hole bullet. Exactly one. No more.
@@ -156,7 +156,7 @@ If `lineup.md` does not exist yet for a spitball:
 2. Identify two more units, progressively fuzzier.
 3. Create `lineup.md` with all three slots filled:
    - **At Bat**: pointer to a new `001-<slug>.md` file (which you create
-     with the full structure).
+     using the `templates/at-bat.md` sidecar).
    - **On Deck**: inline bullet, fuzzy.
    - **In the Hole**: inline bullet, very fuzzy.
 4. Confirm with the user before committing. First-run bootstrapping is
@@ -215,68 +215,20 @@ verification"), run these checks before promoting:
 When invoked directly by the user (no at-bat hand-back in the prior
 turn), skip verification - the user is asserting the prior state.
 
-## At-bat file structure
+## Templates
 
-When you create a new at-bat file (`NNN-<slug>.md`), it MUST contain:
+When creating files, copy from the template sidecars:
 
-```markdown
-# At-Bat NNN: <title>
+- New at-bat file (`NNN-<slug>.md`) -> see
+  `${CLAUDE_PLUGIN_ROOT}/skills/lineup/templates/at-bat.md`. It covers
+  both the standard Red/Green form and the no-automated-test escape,
+  including push-back guidance.
+- `lineup.md` (active or completed) -> see
+  `${CLAUDE_PLUGIN_ROOT}/skills/lineup/templates/lineup.md`. It also
+  documents the monotonic counter rules.
 
-## What
-<concrete description of the unit of work>
-
-## Definition of done
-<observable outcome that proves "done">
-
-## Test plan
-- Red: <a failing test that captures "done">
-- Green: <expected behavior when it passes>
-
-## Scope boundary
-- In: <thing>
-- Out: <related thing we are NOT touching here>
-
-## Dependencies
-- <prior at-bat or external thing>
-```
-
-If the work genuinely cannot be tested (pure docs, no-behavior config,
-exploratory spike), replace the Test plan section with explicit honesty:
-
-```markdown
-## Test plan
-- No automated test: <reason>
-- Manual verification: <concrete steps>
-```
-
-**You MUST push back** on the no-test escape if the at-bat *could* be
-tested. The escape is for cases where automated testing genuinely doesn't
-fit, not for cases where it's inconvenient.
-
-## `lineup.md` structure
-
-```markdown
-# Lineup: <topic>
-
-Spitball: spitball.md
-
-## At Bat
--> NNN-<slug>.md
-
-## On Deck
-- <fuzzy bullet, one sentence>
-
-## In the Hole
-- <very fuzzy bullet, one sentence>
-
-## Completed
-- NNN-<slug>.md
-- NNN-<slug>.md
-```
-
-When the spitball's completion criteria are met, prepend `Status:
-Complete` as the first line of the file. That marker is how a lineup
-becomes inactive - there is no separate metadata.
+Read a template only when you're about to write the corresponding
+file - sidecars are not loaded by default.
 
 ## Process Flow
 
@@ -315,15 +267,6 @@ digraph lineup {
     "Commit if commitAtBat" -> "Hand back to user";
 }
 ```
-
-## Counter rules
-
-- The counter is monotonic per lineup folder.
-- The next counter is `max(NNN across all files in the folder + completed/) + 1`.
-- Counters are zero-padded to three digits (`001`, `002`, ..., `099`,
-  `100`).
-- If a counter is abandoned (file deleted before completion), do NOT
-  reuse it. The next promotion gets the next integer.
 
 ## Configuration
 

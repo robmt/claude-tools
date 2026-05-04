@@ -126,7 +126,7 @@ Create a task for each item and complete in order:
 7. **Synthesize and write `postmortem.md`** to the spitball folder. If
    `postmortem.md` already exists, write `postmortem-002.md` (next
    unused integer; never overwrite a previous postmortem). Use the
-   structure in "Postmortem file structure" below. Anchor every claim
+   template sidecar (see "Templates" below). Anchor every claim
    in concrete evidence: at-bat file names, commit short SHAs, test
    output snippets. Avoid abstract praise or blame.
 
@@ -206,54 +206,23 @@ context suggest is interesting. Don't ask all of them.
   bootstrap, or the at-bat template would catch this earlier next
   time? (One concrete suggestion. Resist a list.)
 
-## Postmortem file structure
+## Templates
 
-Write `postmortem.md` (or `postmortem-NNN.md`) with this skeleton.
-Sections may be omitted when truly empty; write "Nothing notable" if
-the section was asked but had no real content. The asterisk on Mode
-indicates: replace `<completion or failure>` with the actual mode.
+Write `postmortem.md` (or `postmortem-NNN.md` if one already exists in
+the folder). Two skeletons, picked by mode:
 
-```markdown
-# Postmortem: <topic>
+- Completion mode -> see
+  `${CLAUDE_PLUGIN_ROOT}/skills/postmortem/templates/postmortem-completion.md`
+- Failure mode -> see
+  `${CLAUDE_PLUGIN_ROOT}/skills/postmortem/templates/postmortem-failure.md`
 
-Spitball: spitball.md
-Date: YYYY-MM-DD
-Mode: <completion or failure>
+Read the template only when you're about to write the file - sidecars
+are not loaded by default.
 
-## What shipped (vs the plan)
-<concrete: which spitball criteria met, any deviations, evidence>
-
-## Surprises
-<concrete: things we did not expect, with at-bat or commit anchors>
-
-## At-bat sizing
-<which at-bats felt right, which were too big or small, by NNN>
-
-## Carry forward
-<one or two patterns to repeat>
-
-## Avoid next time
-<one or two traps to avoid>
-```
-
-For failure mode, replace the post-shipped sections with:
-
-```markdown
-## What broke
-<concrete symptom; file:line, test name, build error>
-
-## Proximate cause
-<the immediate thing>
-
-## Underlying cause
-<the upstream decision or assumption>
-
-## Detection
-<who or what caught it, how fast>
-
-## Prevention
-<one concrete change to spitball, lineup, or at-bat template>
-```
+Anchor every claim in concrete evidence: at-bat file names, commit
+short SHAs, test output snippets. Sections may be omitted when truly
+empty; write "Nothing notable" if the section was asked but had no
+real content. Don't fabricate.
 
 ## Process Flow
 
