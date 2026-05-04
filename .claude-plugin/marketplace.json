@@ -12,7 +12,7 @@
       "name": "spitball",
       "source": "./plugins/spitball",
       "description": "Lightweight design conversation that produces a small spitball artifact. Forked from obra/superpowers brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, and no auto-handoff to a planning skill. Includes a spitball-setup skill for first-run configuration.",
-      "version": "0.4.1"
+      "version": "0.4.2"
     },
     {
       "name": "lineup",

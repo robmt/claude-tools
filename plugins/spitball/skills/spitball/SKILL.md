@@ -13,9 +13,20 @@ Start by understanding the current project context, then ask questions one at a 
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
 </HARD-GATE>
 
-## Anti-Pattern: "This Is Too Simple To Need A Design"
+## Right-sizing the ritual
 
-Every project goes through this process. A todo list, a single-function utility, a config change, all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
+Every task gets a design check. The FORM of that check must scale to the task.
+
+- **Mechanical / one-path** (file move, rename, refactor with no behavior change, config tweak, well-defined transformation): a few bullets describing what happens and one approval. No alternatives, no sectioning, no per-section gates. If you find yourself inventing 2-3 approaches to fill a slot, the task didn't need them — that's theater.
+- **New feature / unsettled shape**: full ritual — 2-3 genuine alternatives, a sectioned design, per-section approval. The gates exist to catch divergence early on a long thought; they earn their weight here.
+
+Anti-patterns:
+
+- **"Three approaches" for a task that has one obvious path.** Don't manufacture alternatives. State the one path and recommend it.
+- **Section-by-section approval on a 5-bullet design.** Approval gates are round-trips; on a short design they cost more than they save. Present the whole short design, ask once.
+- **Skipping the design check entirely** because the task feels small. The check exists to surface unexamined assumptions; even "move 4 files" deserves one paragraph + approval.
+
+The skill stays valuable across the whole range by being honest about which mode the current task is in. Most of the design effort goes into matching the form to the work, not into producing more form.
 
 ## Checklist
 
@@ -24,8 +35,8 @@ You MUST create a task for each of these items and complete them in order:
 1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, and `repoRoot`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. See `configuration.md` only if you need the schema for an edge case.
 2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet — you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
 3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Read additional files only when a specific question makes one obviously relevant.
-4. **Propose 2-3 approaches** with trade-offs and your recommendation.
-5. **Present design** in sections scaled to their complexity, get user approval after each section.
+4. **Pick the right mode** — mechanical (one obvious path) or design-bearing (genuine alternatives exist). For mechanical, skip to step 5 with a brief recommendation, no alternatives. For design-bearing, propose 2-3 genuine approaches with trade-offs and your recommendation. Don't invent alternatives to fill a slot.
+5. **Present design.** Mechanical tasks: one short message covering the whole design, then one approval. Design-bearing tasks: break into sections and ask after each section. Per-section gates are for long designs only — on a short design they're wasted round trips.
 6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
 7. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
 8. **User reviews written spitball** - ask user to review the file before stopping.
@@ -48,10 +59,19 @@ digraph spitball {
 
     "Resolve config\n(helper script)" -> "Note project context\n(README, CLAUDE.md)";
     "Note project context\n(README, CLAUDE.md)" -> "Ask clarifying questions\n(lazy file reads)";
-    "Ask clarifying questions\n(lazy file reads)" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
+    "Ask clarifying questions\n(lazy file reads)" -> "Pick mode";
+    "Pick mode" [shape=diamond];
+    "Pick mode" -> "Recommend one path" [label="mechanical"];
+    "Pick mode" -> "Propose 2-3 alternatives" [label="design-bearing"];
+    "Recommend one path" [shape=box];
+    "Propose 2-3 alternatives" [shape=box];
+    "Recommend one path" -> "Present design (one msg)";
+    "Propose 2-3 alternatives" -> "Present design (sections)";
+    "Present design (one msg)" [shape=box];
+    "Present design (sections)" [shape=box];
+    "Present design (one msg)" -> "User approves design?";
+    "Present design (sections)" -> "User approves design?";
+    "User approves design?" -> "Pick mode" [label="no, revise"];
     "User approves design?" -> "Write spitball doc" [label="yes"];
     "Write spitball doc" -> "Spitball self-review\n(fix inline)";
     "Spitball self-review\n(fix inline)" -> "User reviews spitball?";
@@ -74,18 +94,17 @@ digraph spitball {
 - Only one question per message. If a topic needs more exploration, break it into multiple questions.
 - Focus on understanding: purpose, constraints, success criteria.
 
-**Exploring approaches:**
+**Exploring approaches (only when alternatives genuinely exist):**
 
-- Propose 2-3 different approaches with trade-offs.
-- Present options conversationally with your recommendation and reasoning.
-- Lead with your recommended option and explain why.
+- If there are real, different paths to the goal, propose 2-3 with trade-offs.
+- If there's one clear right way, just recommend it in a sentence and move on. Inventing fake alternatives is theater.
+- When you do present alternatives, lead with the recommended option and explain why.
 
 **Presenting the design:**
 
-- Once you believe you understand what you're building, present the design.
-- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced.
-- Ask after each section whether it looks right so far.
-- Cover: architecture, components, data flow, error handling, testing.
+- Once you understand what you're building, present the design.
+- Match the form to the task. Mechanical task: a few bullets, all in one message, one approval. Design-bearing task: sections, with per-section approval.
+- Cover what's relevant. Skip what isn't — a file move doesn't need an "error handling" section, a UI redesign doesn't need a "data model" section. Standard topics for a substantial design: architecture, components, data flow, error handling, testing.
 - Be ready to go back and clarify if something doesn't make sense.
 
 **Right-sizing the artifact:**
@@ -144,7 +163,7 @@ Wait for the user's response. If they request changes, make them and re-run the 
 - **One question at a time.** Don't overwhelm with multiple questions.
 - **Multiple choice preferred.** Easier to answer than open-ended when possible.
 - **YAGNI ruthlessly.** Remove unnecessary features from all designs.
-- **Explore alternatives.** Always propose 2-3 approaches before settling.
-- **Incremental validation.** Present design, get approval before moving on.
+- **Explore alternatives only when they exist.** If the task has one obvious path, recommend it. Inventing 2-3 approaches for a one-path task is theater.
+- **Right-sized validation.** Mechanical tasks: one approval on the whole short design. Design-bearing tasks: per-section approval. Don't gate small things.
 - **Be flexible.** Go back and clarify when something doesn't make sense.
 - **Honest about uncertainty.** A spitball captures what we know, not what we're guessing.
