@@ -181,11 +181,22 @@ verification"), run these checks before promoting:
    - File-existence claims -> confirm the file exists.
    - Build claims (`dotnet build` clean, `npm run build` succeeds) ->
      re-run the named command. Capture exit status.
-   - Test claims -> re-run the named test command.
+   - Test claims -> re-run the named test command. Ideally this is the
+     SAME command at-bat ran for Red and Green; only the expected exit
+     code/output flips.
    - Grep claims (e.g., "no remaining `StaticPlugin*` references") ->
      re-run the grep.
-   - Behavior claims that can't be checked from CLI -> ask the user to
-     confirm the manual step. Don't silently mark "done."
+   - Behavior claims that can be made executable (start a backend in
+     the background, `curl`, kill the backend) -> run them yourself.
+     Don't accept "deferred to user" if you have the tools.
+   - Behavior claims with eyes-open no-test consent (recorded in the
+     at-bat's `## Verification` section) -> trust the consent and skip
+     those checks. The user accepted the exception explicitly.
+   - Behavior claims that genuinely require human eyes (visual layout,
+     interactive UX) -> the at-bat should have left a runnable
+     verification procedure in its `## Verification` section. Re-state
+     it concisely and ask the user to confirm. Don't silently mark
+     "done."
 4. **Verify the at-bat's Scope boundary.** Glance at the diff (or
    `git status` since the prior commit, if `commitAtBat: true` was on)
    and confirm nothing listed in the Scope boundary's Out section was
