@@ -25,6 +25,8 @@ comes from the spitball's criteria, not from running out of batters.
 /plugin install spitball@claude-tools
 ```
 
+Also requires `python3` and `git` on PATH (used by the config-resolution helper script, identical to spitball's).
+
 The lineup skill will refuse to run if no spitball exists in the target
 folder.
 

@@ -32,16 +32,12 @@ per cycle. The user drives the loop.
 
 Create a task for each item and complete in order:
 
-1. **Discover active lineup.** Read configuration: merge
-   `~/.spitball.json` (global) with `<repoRoot>/.spitball.json` (per-repo
-   override) over hardcoded defaults. Get `saveDir` and
-   `nestUnderRepoName`. Compute the **discovery root**:
-   - If `nestUnderRepoName: false` (default): `<saveDir>`.
-   - If `nestUnderRepoName: true`: `<saveDir>/<repo-name>` where
-     `<repo-name>` is parsed from `git remote get-url origin` (org/repo
-     flattened with `-`), falling back to repo basename. If cwd is not in
-     a git repo, refuse and tell the user to set
-     `nestUnderRepoName: false` for this project.
+1. **Discover active lineup.** Run
+   `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
+   the JSON for `effectiveSaveDir`, `autoCommit`, and `repoRoot`. Use
+   `effectiveSaveDir` as the **discovery root**. If exit code is
+   non-zero, the cwd is not in a git repo while `nestUnderRepoName:
+   true` — refuse and tell the user.
 
    Scan immediate children of the discovery root for folders that
    contain a `spitball.md`. Among those, the "live" lineups are folders
@@ -207,21 +203,20 @@ digraph lineup {
 
 ## Configuration
 
-Read merged config from `~/.spitball.json` (global) overlaid by
-`<repoRoot>/.spitball.json` (per-repo override) on top of hardcoded
-defaults. See the spitball plugin's `configuration.md` for the full
-schema. Lineup uses these keys:
+Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
+merged config. The script reads `~/.spitball.json` and
+`<repoRoot>/.spitball.json` over defaults, derives the repo name, and
+returns JSON. See the spitball plugin's `configuration.md` for the
+schema. Lineup uses these fields from the script output:
 
-- `saveDir` — directory containing spitball folders. Defaults to
-  `docs/spitballs/`.
-- `autoCommit` — whether to commit the at-bat file and updated lineup.md
-  after promotion. Defaults to `true`.
-- `nestUnderRepoName` — when true, scan only `<saveDir>/<repo-name>/`
-  for active lineups, not the full saveDir. Defaults to `false`. See
-  step 1 of the checklist for repo name derivation.
+- `effectiveSaveDir` — directory to scan for spitball folders. Already
+  includes the `<repo-name>` subfolder when `nestUnderRepoName: true`.
+- `autoCommit` — whether to commit the at-bat file and updated
+  `lineup.md` after promotion.
+- `repoRoot` — repo root path (used for staging files relative to the
+  repo).
 
-There is no `.lineup.json`. If a value isn't in either spitball config
-file, use the default.
+There is no `.lineup.json`. Lineup shares spitball's config.
 
 ## Key principles
 

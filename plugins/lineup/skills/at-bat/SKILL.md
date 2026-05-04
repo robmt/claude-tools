@@ -53,12 +53,13 @@ test.
 
 Create a task for each item and complete in order:
 
-1. **Discover active lineup.** Read merged config from
-   `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults.
-   Compute the **discovery root**: `<saveDir>` normally, or
-   `<saveDir>/<repo-name>` when `nestUnderRepoName: true`. Repo name is
-   parsed from `git remote get-url origin` (or repo basename fallback);
-   refuse if cwd is not in a git repo and `nestUnderRepoName: true`.
+1. **Discover active lineup.** Run
+   `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
+   the JSON for `effectiveSaveDir`, `autoCommit`, and `repoRoot`. Use
+   `effectiveSaveDir` as the **discovery root**. If exit code is
+   non-zero, the cwd is not in a git repo while `nestUnderRepoName:
+   true` — refuse and tell the user.
+
    Scan immediate children of the discovery root for folders that
    contain `lineup.md` without a `Status: Complete` marker.
    - Zero live → tell user to run `lineup` (or `spitball` first if no
@@ -154,17 +155,14 @@ digraph atbat {
 
 ## Configuration
 
-Read merged config from `~/.spitball.json` (global) overlaid by
-`<repoRoot>/.spitball.json` (per-repo) on top of hardcoded defaults. See
-the spitball plugin's `configuration.md` for the full schema. At-bat
-uses:
+Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
+merged config. The script reads `~/.spitball.json` and
+`<repoRoot>/.spitball.json` over defaults and returns JSON. See the
+spitball plugin's `configuration.md` for the schema. At-bat uses:
 
-- `saveDir` — directory containing spitball folders. Defaults to
-  `docs/spitballs/`.
-- `autoCommit` — whether to commit the work after completion. Defaults
-  to `true`.
-- `nestUnderRepoName` — when true, scan only `<saveDir>/<repo-name>/`
-  for the active lineup. Defaults to `false`.
+- `effectiveSaveDir` — discovery root for the active lineup.
+- `autoCommit` — whether to commit the work after completion.
+- `repoRoot` — repo root path (used for `git mv` and commit operations).
 
 There is no `.lineup.json`. Lineup and at-bat share spitball's config.
 

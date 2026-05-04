@@ -21,25 +21,23 @@ Every project goes through this process. A todo list, a single-function utility,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Read configuration** - merge `~/.spitball.json` (global) with `<repoRoot>/.spitball.json` (per-repo override) on top of hardcoded defaults (`saveDir`: `docs/spitballs/`, `autoCommit`: `true`, `nestUnderRepoName`: `false`). Per-key merge: per-repo wins over global, global wins over defaults. If both files are absent, mention to the user that the `spitball-setup` skill is available if they want explicit configuration. Do not block on this; proceed with defaults. See `configuration.md` for the full schema and resolution rules.
-2. **Resolve effective save path** - if `nestUnderRepoName` is `true`, derive the repo name (see `configuration.md`: parsed from `git remote get-url origin`, else fall back to repo basename) and use `<saveDir>/<repo-name>/` as the effective base directory. If `nestUnderRepoName: true` and the cwd is not inside a git repo, refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false` for this project.
-3. **Explore project context** - check files, docs, recent commits.
-4. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria.
-5. **Propose 2-3 approaches** with trade-offs and your recommendation.
-6. **Present design** in sections scaled to their complexity, get user approval after each section.
-7. **Write spitball doc** - save to `<effective-base>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
-8. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
-9. **User reviews written spitball** - ask user to review the file before stopping.
-10. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
+1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `autoCommit`, `nestUnderRepoName`, `repoName`, `effectiveSaveDir`, and `repoRoot`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` — refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. See `configuration.md` only if you need the schema for an edge case.
+2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet — you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
+3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. Read additional files only when a specific question makes one obviously relevant.
+4. **Propose 2-3 approaches** with trade-offs and your recommendation.
+5. **Present design** in sections scaled to their complexity, get user approval after each section.
+6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
+7. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
+8. **User reviews written spitball** - ask user to review the file before stopping.
+9. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
 
 ## Process Flow
 
 ```dot
 digraph spitball {
-    "Read config\n(global + per-repo)" [shape=box];
-    "Resolve effective save path\n(nestUnderRepoName?)" [shape=box];
-    "Explore project context" [shape=box];
-    "Ask clarifying questions" [shape=box];
+    "Resolve config\n(helper script)" [shape=box];
+    "Note project context\n(README, CLAUDE.md)" [shape=box];
+    "Ask clarifying questions\n(lazy file reads)" [shape=box];
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
@@ -48,10 +46,9 @@ digraph spitball {
     "User reviews spitball?" [shape=diamond];
     "Stop and hand back" [shape=doublecircle];
 
-    "Read config\n(global + per-repo)" -> "Resolve effective save path\n(nestUnderRepoName?)";
-    "Resolve effective save path\n(nestUnderRepoName?)" -> "Explore project context";
-    "Explore project context" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
+    "Resolve config\n(helper script)" -> "Note project context\n(README, CLAUDE.md)";
+    "Note project context\n(README, CLAUDE.md)" -> "Ask clarifying questions\n(lazy file reads)";
+    "Ask clarifying questions\n(lazy file reads)" -> "Propose 2-3 approaches";
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
@@ -69,7 +66,7 @@ digraph spitball {
 
 **Understanding the idea:**
 
-- Check out the current project state first (files, docs, recent commits).
+- The harness usually has `README.md` and `CLAUDE.md` already loaded — work from those. Do not list directories, scan source, or read commits before the user has named the topic. When you do reach for a file, do it lazily, justified by something specific the user just said.
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spitball, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then spitball the first sub-project through the normal design flow. Each sub-project gets its own spitball cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea.
@@ -107,7 +104,7 @@ digraph spitball {
 
 **Working in existing codebases:**
 
-- Explore the current structure before proposing changes. Follow existing patterns.
+- Once the topic is clear, read the specific files the design will touch. Follow existing patterns. Don't pre-explore the whole tree "just in case" — that wastes context and slows the conversation.
 - Where existing code has problems that affect the work (e.g., a file that has grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design, the way a good developer improves code they're working in.
 - Don't propose unrelated refactoring. Stay focused on what serves the current goal.
 
@@ -115,7 +112,7 @@ digraph spitball {
 
 **Documentation:**
 
-- Write the validated spitball to `<effective-base>/YYYY-MM-DD-<topic>/spitball.md` (one folder per spitball; the file inside is always named `spitball.md`). `<effective-base>` is `<saveDir>` normally, or `<saveDir>/<repo-name>` when `nestUnderRepoName: true`. Config is merged from `~/.spitball.json` and `<repoRoot>/.spitball.json` over hardcoded defaults; see `configuration.md`. The folder gives every spitball a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
+- Write the validated spitball to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md`, using the `effectiveSaveDir` value from step 1's helper output. The folder gives every spitball a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
 - Use `elements-of-style:writing-clearly-and-concisely` skill if available.
 - If `autoCommit: true`, commit the spitball document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
 

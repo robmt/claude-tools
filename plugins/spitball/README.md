@@ -18,6 +18,8 @@ Forked from `obra/superpowers/skills/brainstorming`. Intentional changes:
 /plugin install spitball@claude-tools
 ```
 
+Requires `python3` and `git` on PATH (used by the config-resolution helper script).
+
 ## Configuration
 
 Two files, merged per-key:
@@ -61,6 +63,8 @@ plugins/spitball/
     spitball-reviewer-prompt.md    # subagent prompt for self-review
   skills/spitball-setup/
     SKILL.md                       # configuration wizard
+  scripts/
+    resolve-config.py              # merges global+per-repo config, derives repo name
 ```
 
 ## Attribution
