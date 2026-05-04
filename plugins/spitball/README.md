@@ -5,13 +5,12 @@ A lightweight design conversation. The output is a small artifact called a
 We don't write hundreds of lines of forward plan that won't survive contact
 with reality.
 
-Forked from `obra/superpowers/skills/brainstorming`. Two intentional changes:
+Forked from `obra/superpowers/skills/brainstorming`. Intentional changes:
 
-- Save location is configurable per project via `.spitball.json`.
+- Configurable save location (per-repo or central with optional repo-name nesting).
 - The skill stops after the spitball is written; it does not auto-invoke any
   planning or implementation skill. Continuation is the user's call.
-
-The visual companion (browser-based mockups and diagrams) is included.
+- The visual companion (browser-based mockups) was removed — text-only.
 
 ## Install
 
@@ -19,28 +18,36 @@ The visual companion (browser-based mockups and diagrams) is included.
 /plugin install spitball@claude-tools
 ```
 
-Visual companion requires Node.js if you want to run mockups in a browser. The
-core skill works without it.
-
 ## Configuration
 
-The fastest path is to run the `spitball-setup` skill, which walks through the
-options and writes `.spitball.json`:
+Two files, merged per-key:
 
-> "Set up spitball for this project"
+- `~/.spitball.json` — global default for every project.
+- `<repoRoot>/.spitball.json` — per-repo override.
 
-Or drop a `.spitball.json` at the repo root yourself:
+The fastest path is to run the `spitball-setup` skill, which asks scope
+(global vs. this repo) first and writes to the right file:
+
+> "Set up spitball"
+
+Or write the file yourself. Global example for a shared, central save dir:
 
 ```json
 {
-  "saveDir": "docs/spitballs",
-  "autoCommit": true,
-  "visualCompanionDefault": "ask"
+  "saveDir": "/mnt/notes/spitballs",
+  "autoCommit": false,
+  "nestUnderRepoName": true
 }
 ```
 
-If the file is absent, defaults apply. See `skills/spitball/configuration.md`
-for the full schema.
+With `nestUnderRepoName: true`, spitballs land at
+`<saveDir>/<repo-name>/YYYY-MM-DD-<topic>/spitball.md`, where `<repo-name>`
+is parsed from `git remote get-url origin` (e.g., `robmt-claude-tools`),
+falling back to the repo basename. Lineup discovery honors the same flag.
+
+If both files are absent, defaults apply (`saveDir`: `docs/spitballs/`,
+`autoCommit`: `true`, `nestUnderRepoName`: `false`). See
+`skills/spitball/configuration.md` for the full schema.
 
 ## Layout
 
@@ -50,21 +57,14 @@ plugins/spitball/
   README.md
   skills/spitball/
     SKILL.md                       # the skill itself
-    configuration.md               # .spitball.json schema
+    configuration.md               # config schema and resolution rules
     spitball-reviewer-prompt.md    # subagent prompt for self-review
-    visual-companion.md            # browser-based mockup workflow
-    scripts/                       # visual-companion server (Node)
-      frame-template.html
-      helper.js
-      server.cjs
-      start-server.sh
-      stop-server.sh
   skills/spitball-setup/
-    SKILL.md                       # first-run configuration wizard
+    SKILL.md                       # configuration wizard
 ```
 
 ## Attribution
 
-Original brainstorming skill, visual companion design, and server scripts are
-from [obra/superpowers](https://github.com/obra/superpowers). This plugin is a
+Original brainstorming skill is from
+[obra/superpowers](https://github.com/obra/superpowers). This plugin is a
 fork at commit `6efe32c9`.

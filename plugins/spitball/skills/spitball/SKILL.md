@@ -21,13 +21,13 @@ Every project goes through this process. A todo list, a single-function utility,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Read configuration** - look for `.spitball.json` at the repo root. If present, read `saveDir`, `autoCommit`, and `visualCompanionDefault`. If the file is absent, fall back to defaults (`saveDir`: `docs/spitballs/`, `autoCommit`: `true`, `visualCompanionDefault`: `"ask"`) and briefly mention to the user that the `spitball-setup` skill is available if they want explicit configuration. Do not block on this; proceed with defaults. See `configuration.md` for the schema.
-2. **Explore project context** - check files, docs, recent commits.
-3. **Offer visual companion** (if topic will involve visual questions, AND `visualCompanionDefault` is `"ask"`). This is its own message, not combined with a clarifying question. If `visualCompanionDefault` is `"off"`, skip this step entirely. See the Visual Companion section below.
+1. **Read configuration** - merge `~/.spitball.json` (global) with `<repoRoot>/.spitball.json` (per-repo override) on top of hardcoded defaults (`saveDir`: `docs/spitballs/`, `autoCommit`: `true`, `nestUnderRepoName`: `false`). Per-key merge: per-repo wins over global, global wins over defaults. If both files are absent, mention to the user that the `spitball-setup` skill is available if they want explicit configuration. Do not block on this; proceed with defaults. See `configuration.md` for the full schema and resolution rules.
+2. **Resolve effective save path** - if `nestUnderRepoName` is `true`, derive the repo name (see `configuration.md`: parsed from `git remote get-url origin`, else fall back to repo basename) and use `<saveDir>/<repo-name>/` as the effective base directory. If `nestUnderRepoName: true` and the cwd is not inside a git repo, refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false` for this project.
+3. **Explore project context** - check files, docs, recent commits.
 4. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria.
 5. **Propose 2-3 approaches** with trade-offs and your recommendation.
 6. **Present design** in sections scaled to their complexity, get user approval after each section.
-7. **Write spitball doc** - save to `<saveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
+7. **Write spitball doc** - save to `<effective-base>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `autoCommit` is `true` (default), commit the file. If `false`, leave it for the user to commit.
 8. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
 9. **User reviews written spitball** - ask user to review the file before stopping.
 10. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
@@ -36,10 +36,9 @@ You MUST create a task for each of these items and complete them in order:
 
 ```dot
 digraph spitball {
-    "Read config" [shape=box];
+    "Read config\n(global + per-repo)" [shape=box];
+    "Resolve effective save path\n(nestUnderRepoName?)" [shape=box];
     "Explore project context" [shape=box];
-    "Visual questions ahead?" [shape=diamond];
-    "Offer Visual Companion\n(own message, no other content)" [shape=box];
     "Ask clarifying questions" [shape=box];
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
@@ -49,11 +48,9 @@ digraph spitball {
     "User reviews spitball?" [shape=diamond];
     "Stop and hand back" [shape=doublecircle];
 
-    "Read config" -> "Explore project context";
-    "Explore project context" -> "Visual questions ahead?";
-    "Visual questions ahead?" -> "Offer Visual Companion\n(own message, no other content)" [label="yes"];
-    "Visual questions ahead?" -> "Ask clarifying questions" [label="no"];
-    "Offer Visual Companion\n(own message, no other content)" -> "Ask clarifying questions";
+    "Read config\n(global + per-repo)" -> "Resolve effective save path\n(nestUnderRepoName?)";
+    "Resolve effective save path\n(nestUnderRepoName?)" -> "Explore project context";
+    "Explore project context" -> "Ask clarifying questions";
     "Ask clarifying questions" -> "Propose 2-3 approaches";
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
@@ -118,9 +115,9 @@ digraph spitball {
 
 **Documentation:**
 
-- Write the validated spitball to `<saveDir>/YYYY-MM-DD-<topic>/spitball.md` (one folder per spitball; the file inside is always named `spitball.md`). `<saveDir>` comes from `.spitball.json` or the default `docs/spitballs/`. The folder gives every spitball a place for related notes, mockups, or companion-plugin artifacts (e.g., `lineup.md`).
+- Write the validated spitball to `<effective-base>/YYYY-MM-DD-<topic>/spitball.md` (one folder per spitball; the file inside is always named `spitball.md`). `<effective-base>` is `<saveDir>` normally, or `<saveDir>/<repo-name>` when `nestUnderRepoName: true`. Config is merged from `~/.spitball.json` and `<repoRoot>/.spitball.json` over hardcoded defaults; see `configuration.md`. The folder gives every spitball a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
 - Use `elements-of-style:writing-clearly-and-concisely` skill if available.
-- Commit the spitball document to git.
+- If `autoCommit: true`, commit the spitball document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
 
 **Spitball Self-Review:**
 After writing the spitball document, look at it with fresh eyes:
@@ -154,22 +151,3 @@ Wait for the user's response. If they request changes, make them and re-run the 
 - **Incremental validation.** Present design, get approval before moving on.
 - **Be flexible.** Go back and clarify when something doesn't make sense.
 - **Honest about uncertainty.** A spitball captures what we know, not what we're guessing.
-
-## Visual Companion
-
-A browser-based companion for showing mockups, diagrams, and visual options during a spitball. Available as a tool, not a mode. Accepting the companion means it is available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
-
-**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:
-> "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
-
-**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only spitballing.
-
-**Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**
-
-- **Use the browser** for content that IS visual: mockups, wireframes, layout comparisons, architecture diagrams, side-by-side visual designs.
-- **Use the terminal** for content that is text: requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions.
-
-A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question, use the terminal. "Which wizard layout works better?" is a visual question, use the browser.
-
-If they agree to the companion, read the detailed guide before proceeding:
-`visual-companion.md`

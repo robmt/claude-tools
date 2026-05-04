@@ -30,9 +30,10 @@ folder.
 
 ## How it works
 
-Each spitball gets its own folder under `<saveDir>` (configured in
-`.spitball.json`, defaults to `docs/spitballs/`). The lineup adds files
-inside that same folder:
+Each spitball gets its own folder under `<saveDir>` (or
+`<saveDir>/<repo-name>` when `nestUnderRepoName: true`; configured via
+`~/.spitball.json` and/or `<repoRoot>/.spitball.json`, defaults to
+`docs/spitballs/`). The lineup adds files inside that same folder:
 
 ```
 docs/spitballs/2026-04-29-foo/
@@ -98,9 +99,14 @@ Complete` marker:
 
 ## Configuration
 
-`lineup` reads `.spitball.json` for shared values (`saveDir`,
-`autoCommit`). It does not introduce its own config file. If a
-lineup-specific knob is needed later, it'll be added then.
+`lineup` reads spitball's merged config (`~/.spitball.json` overlaid by
+`<repoRoot>/.spitball.json`) for shared values: `saveDir`, `autoCommit`,
+and `nestUnderRepoName`. It does not introduce its own config file. If
+`nestUnderRepoName: true`, lineup discovery scans only
+`<saveDir>/<repo-name>/`, so working in repo X only surfaces X's
+spitballs even when the saveDir is shared across repos. See the spitball
+plugin's `configuration.md` for the full schema. If a lineup-specific
+knob is needed later, it'll be added then.
 
 ## Layout invariant
 

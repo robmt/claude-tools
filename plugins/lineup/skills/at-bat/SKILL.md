@@ -53,9 +53,14 @@ test.
 
 Create a task for each item and complete in order:
 
-1. **Discover active lineup.** Read `.spitball.json` (or use defaults)
-   to get `saveDir`. Scan immediate children of `saveDir` for folders
-   that contain `lineup.md` without a `Status: Complete` marker.
+1. **Discover active lineup.** Read merged config from
+   `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults.
+   Compute the **discovery root**: `<saveDir>` normally, or
+   `<saveDir>/<repo-name>` when `nestUnderRepoName: true`. Repo name is
+   parsed from `git remote get-url origin` (or repo basename fallback);
+   refuse if cwd is not in a git repo and `nestUnderRepoName: true`.
+   Scan immediate children of the discovery root for folders that
+   contain `lineup.md` without a `Status: Complete` marker.
    - Zero live → tell user to run `lineup` (or `spitball` first if no
      spitball exists).
    - Exactly one live → use it.
@@ -149,12 +154,17 @@ digraph atbat {
 
 ## Configuration
 
-Read `.spitball.json` from the repo root. Use:
+Read merged config from `~/.spitball.json` (global) overlaid by
+`<repoRoot>/.spitball.json` (per-repo) on top of hardcoded defaults. See
+the spitball plugin's `configuration.md` for the full schema. At-bat
+uses:
 
 - `saveDir` — directory containing spitball folders. Defaults to
   `docs/spitballs/`.
 - `autoCommit` — whether to commit the work after completion. Defaults
   to `true`.
+- `nestUnderRepoName` — when true, scan only `<saveDir>/<repo-name>/`
+  for the active lineup. Defaults to `false`.
 
 There is no `.lineup.json`. Lineup and at-bat share spitball's config.
 

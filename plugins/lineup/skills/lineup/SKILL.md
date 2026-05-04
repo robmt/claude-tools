@@ -32,8 +32,18 @@ per cycle. The user drives the loop.
 
 Create a task for each item and complete in order:
 
-1. **Discover active lineup.** Read `.spitball.json` (or use defaults) to
-   get `saveDir`. Scan immediate children of `saveDir` for folders that
+1. **Discover active lineup.** Read configuration: merge
+   `~/.spitball.json` (global) with `<repoRoot>/.spitball.json` (per-repo
+   override) over hardcoded defaults. Get `saveDir` and
+   `nestUnderRepoName`. Compute the **discovery root**:
+   - If `nestUnderRepoName: false` (default): `<saveDir>`.
+   - If `nestUnderRepoName: true`: `<saveDir>/<repo-name>` where
+     `<repo-name>` is parsed from `git remote get-url origin` (org/repo
+     flattened with `-`), falling back to repo basename. If cwd is not in
+     a git repo, refuse and tell the user to set
+     `nestUnderRepoName: false` for this project.
+
+   Scan immediate children of the discovery root for folders that
    contain a `spitball.md`. Among those, the "live" lineups are folders
    whose `lineup.md` does NOT begin with `Status: Complete`. (A folder
    without `lineup.md` yet counts as live; this is the first run.)
@@ -197,15 +207,21 @@ digraph lineup {
 
 ## Configuration
 
-Read `.spitball.json` from the repo root. Use these values:
+Read merged config from `~/.spitball.json` (global) overlaid by
+`<repoRoot>/.spitball.json` (per-repo override) on top of hardcoded
+defaults. See the spitball plugin's `configuration.md` for the full
+schema. Lineup uses these keys:
 
 - `saveDir` — directory containing spitball folders. Defaults to
   `docs/spitballs/`.
 - `autoCommit` — whether to commit the at-bat file and updated lineup.md
   after promotion. Defaults to `true`.
+- `nestUnderRepoName` — when true, scan only `<saveDir>/<repo-name>/`
+  for active lineups, not the full saveDir. Defaults to `false`. See
+  step 1 of the checklist for repo name derivation.
 
-There is no `.lineup.json`. If a value isn't in `.spitball.json`, use the
-default.
+There is no `.lineup.json`. If a value isn't in either spitball config
+file, use the default.
 
 ## Key principles
 
