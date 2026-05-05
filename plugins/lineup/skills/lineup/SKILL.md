@@ -1,6 +1,6 @@
 ---
 name: lineup
-description: "Use this skill to review or refresh the rolling work state next to a bullpen. Trigger on phrases like 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the bullpen done', 'check completion', or whenever the user wants to advance the next-step view without doing implementation work. Reads the bullpen + current state, promotes On Deck -> At Bat (creates an at-bat file), and stops. Never auto-invokes at-bat or any implementation skill."
+description: "Use this skill to review or refresh the rolling work state next to a bullpen. Trigger on phrases like 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the bullpen done', 'check completion', or whenever the user wants to advance the next-step view without doing implementation work. Also trigger when the user gives direction for the next at-bat ('the next at-bat should X', 'have the next at-bat do Y', 'make the next slot Z') - lineup is the place to shape what the next at-bat will be, not base Claude. Reads the bullpen + current state, promotes On Deck -> At Bat (creates an at-bat file), and stops. Never auto-invokes at-bat or any implementation skill."
 ---
 
 # Lineup: Review the Next Three Batters
@@ -18,13 +18,18 @@ MUST verify the just-completed at-bat's Definition of done before
 promoting (see "Verification mode" below). When the bullpen's
 completion criteria are met, lineup MAY move the entire bullpen
 folder into `<effectiveSaveDir>/completed/<folder>/` as part of
-marking `Status: Complete` (see "Completion archive" below) - this is
-the only move it performs. It MAY invoke `at-bat` at the end of the
-hand-back, and only when the user has opted in via `autoContinue`
-(`"always"`, `"session"` for this conversation, or `"yes"` at the
-per-handoff prompt). It NEVER invokes any other implementation skill.
-The user always drives the loop - `autoContinue` is a shortcut for
-typing the next command, not a license to chain.
+marking `Status: Complete` (see "Completion archive" below). At
+first-run bootstrap, lineup MAY run `git worktree add` if the user
+opts in to worktree use (see "Worktree decision" below); on
+completion archive it MAY run `git worktree remove` to tear that
+worktree down. Those are the only filesystem/git mutations it
+performs. It MAY invoke
+`at-bat` at the end of the hand-back, and only when the user has
+opted in via `autoContinue` (`"always"`, `"session"` for this
+conversation, or `"yes"` at the per-handoff prompt). It NEVER
+invokes any other implementation skill. The user always drives the
+loop - `autoContinue` is a shortcut for typing the next command,
+not a license to chain.
 </HARD-GATE>
 
 ## Output rule: ASCII only
@@ -104,6 +109,16 @@ Create a task for each item and complete in order:
      folder; never reuse, never reset.
    - Promote In the Hole -> On Deck (inline bullet in `lineup.md`).
    - Draft a new In the Hole bullet. Exactly one. No more.
+
+   **Honor user direction.** If the user's invoking message included
+   specific direction for the next at-bat ("the next at-bat should
+   use a multiselect combobox with chips", "this one is Vue test only",
+   "have the next slot wire up the keyboard handler"), incorporate it
+   into the new at-bat's What / Definition of done / Test plan / Scope
+   boundary rather than inferring from the bullpen alone. The user is
+   the source of truth; lineup's job is to shape, not to outvote. If
+   the direction conflicts with the bullpen's stated destination,
+   surface the conflict back to the user before writing.
 8. **Update `lineup.md`.** Replace the At Bat pointer with the new file
    name. Update the On Deck and In the Hole bullets. Append the
    previously-completed at-bat to the Completed list (its file should
@@ -171,9 +186,58 @@ If `lineup.md` does not exist yet for a bullpen:
      using the `templates/at-bat.md` sidecar).
    - **On Deck**: inline bullet, fuzzy.
    - **In the Hole**: inline bullet, very fuzzy.
-4. Confirm with the user before committing. First-run bootstrapping is
+4. **Worktree decision** (see "Worktree decision" below). Ask the user
+   whether to run this bullpen in a git worktree. Recommend `yes` if
+   the bullpen's scope looks substantial (multiple at-bats, broad
+   surface area, risky changes); recommend `no` for small, contained
+   bullpens. If the user opts in, create the worktree and prepend a
+   `Worktree:` header to `lineup.md`.
+5. Confirm with the user before committing. First-run bootstrapping is
    the one place the reviewer is making structural decisions; the user
    should approve the initial three slots.
+
+## Worktree decision
+
+A worktree decision is made once, at first-run bootstrap, and applies
+to every at-bat in the bullpen. Lineup is the only skill that creates
+the worktree; at-bat reads the `Worktree:` header from `lineup.md` and
+operates inside that path.
+
+When to recommend a worktree:
+
+- The bullpen's scope spans multiple at-bats and is likely to touch
+  files outside a single area.
+- The work is risky or speculative and the user benefits from a
+  clean branch they can throw away.
+- The user is currently mid-flight on another branch in the main
+  checkout and shouldn't have to stash/switch.
+
+When to skip a worktree:
+
+- The bullpen is small (one or two at-bats) and contained.
+- The work is a quick fix or a doc change.
+- The bullpen folder lives outside any git repo (`repoRoot` is null).
+
+Procedure when the user opts in:
+
+1. **Pick a branch name.** Default: the bullpen folder's slug with
+   the leading `YYYY-MM-DD-` stripped. Offer this default and let the
+   user override.
+2. **Pick a worktree path.** Default: `<repoRoot>/../worktrees/<slug>`
+   (sibling-of-repo). Confirm with the user; their workflow may want
+   it elsewhere.
+3. **Run** `git -C <repoRoot> worktree add <path> -b <branch>`. If
+   the branch already exists, drop the `-b` and add it as a
+   pre-existing branch instead. If the path already exists, stop and
+   ask the user.
+4. **Prepend** `Worktree: <path>` as the first line of `lineup.md`
+   (above any other content, including a future `Status: Complete`
+   marker - those compose as two header lines).
+5. **Mention the worktree in the hand-back** so the user knows where
+   to `cd` if they want to inspect work in progress.
+
+When the user declines, do nothing. No `Worktree:` header is written;
+at-bat will run from the current cwd as usual.
 
 ## Verification mode
 
@@ -258,6 +322,21 @@ The archive bucket is reserved: bullpens must not be named
 `completed`. The resolve-config scan treats a top-level `completed/`
 folder without its own `bullpen.md` as the bucket and walks one level
 down for archived folders.
+
+If `lineup.md` carries a `Worktree:` header, remove the worktree as
+part of archival:
+
+1. Strip the `Worktree:` header from `lineup.md` (the line is gone
+   in the completed form; only `Status: Complete` remains at the top).
+2. Run `git -C <repoRoot> worktree remove <path>`. If the worktree
+   has uncommitted changes, this fails - stop and tell the user. They
+   can either commit/discard and re-invoke lineup, or remove the
+   worktree manually with `--force`.
+3. Note the removal in the hand-back ("Worktree at `<path>` removed")
+   so the user knows the cleanup happened.
+
+The branch the worktree was on is left intact so the user can merge
+or delete it on their own schedule.
 
 ## Templates
 

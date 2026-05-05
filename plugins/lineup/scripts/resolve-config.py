@@ -138,6 +138,12 @@ def repo_name(root: Path):
         return root.name
     if len(parts) == 1:
         return parts[0]
+    # Collapse a trailing duplicate. Azure DevOps's
+    # dev.azure.com/{org}/{project}/_git/{repo} leaves [org, project, repo]
+    # after _git is filtered; when project == repo (a common pattern), the
+    # naive join would yield "repo-repo".
+    if parts[-1] == parts[-2]:
+        return parts[-1]
     return f"{parts[-2]}-{parts[-1]}"
 
 

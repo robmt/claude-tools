@@ -52,6 +52,25 @@ class RepoNameTests(unittest.TestCase):
             "myproject-myrepo",
         )
 
+    def test_azure_devops_project_equals_repo_collapses_duplicate(self):
+        # Regression: dev.azure.com/{org}/{project}/_git/{repo} where
+        # project == repo (a common Azure DevOps pattern) previously
+        # produced "its-monorepo-its-monorepo".
+        self.assertEqual(
+            self._name_for(
+                "https://dev.azure.com/HighQA-ITS/its-monorepo/_git/its-monorepo"
+            ),
+            "its-monorepo",
+        )
+
+    def test_azure_devops_ssh_project_equals_repo_collapses_duplicate(self):
+        self.assertEqual(
+            self._name_for(
+                "git@ssh.dev.azure.com:v3/HighQA-ITS/its-monorepo/its-monorepo"
+            ),
+            "its-monorepo",
+        )
+
     def test_self_hosted_tfs_https(self):
         self.assertEqual(
             self._name_for(

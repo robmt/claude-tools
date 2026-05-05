@@ -12,13 +12,13 @@
       "name": "bullpen",
       "source": "./plugins/bullpen",
       "description": "Lightweight design conversation that produces a small bullpen artifact. Forked from obra/superpowers brainstorming with global+per-repo config, optional repo-name nesting for shared save dirs, separate commitBullpen/commitAtBat flags, and an autoContinue setting that controls how the lineup -> at-bat handoff works. Includes a bullpen-setup skill for first-run configuration. ASCII-only file output for cross-platform safety.",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "lineup",
       "source": "./plugins/lineup",
-      "description": "Companion to bullpen. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a bullpen's destination. Three skills: lineup (reviewer) sharpens the next at-bat AND verifies a just-completed at-bat's Definition of done before promoting; at-bat (implementer) does the work with red/green testing - including an early testability gate that stops the at-bat before code is written if verification needs human eyes - and hands off to lineup unconditionally on completion; postmortem reflects on the bullpen + at-bat history when a bullpen is delivered or when something broke. autoContinue config governs the lineup -> at-bat side of the loop.",
-      "version": "1.0.0"
+      "description": "Companion to bullpen. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a bullpen's destination. Three skills: lineup (reviewer) sharpens the next at-bat AND verifies a just-completed at-bat's Definition of done before promoting; at-bat (implementer) does the work with red/green testing - including an early testability gate that stops the at-bat before code is written if verification needs human eyes - and hands off to lineup unconditionally on completion; postmortem reflects on the bullpen + at-bat history when a bullpen is delivered or when something broke. autoContinue config governs the lineup -> at-bat side of the loop. Optional per-bullpen worktree (lineup creates and tears it down).",
+      "version": "1.1.0"
     }
   ]
 }

@@ -75,6 +75,17 @@ moving on - don't leave dev servers running.
   boundary section names what's Out. Respect it. If you find a real
   problem outside scope, surface it to the user and let them decide
   whether to add it to the lineup as a future at-bat.
+- **"The at-bat's intent requires this Out change."** No. If you are
+  constructing that sentence, you are in the failure mode this rule
+  exists to block. Every scope expansion has a plausible
+  justification - "the test plan implicitly needs it," "the Page-side
+  bug is real," "it's a small bounded change." None of them give you
+  permission to edit an Out file. The fact that the test plan can't
+  go Red->Green without touching Out files is a doc-flaw signal: the
+  at-bat itself is wrong. Stop and surface (see step 7's mid-Green
+  stop trigger). Documenting the expansion after the fact in the
+  `## Verification` section is not a substitute for asking - it is
+  the audit trail of a violation.
 - **"This test is hard to write, I'll skip it."** No. If the test is
   hard, that is a signal the design is unclear. Stop and re-read the
   at-bat. If the at-bat is genuinely untestable but the Test plan
@@ -109,6 +120,16 @@ Create a task for each item and complete in order:
 2. **Read the lineup.** Find the At Bat pointer in `lineup.md`. If the
    At Bat slot is empty (no pointer), tell the user to run `lineup`
    first to sharpen one.
+
+   While reading, also check the very first line for a `Worktree:
+   <path>` header. If present, that path is the working directory for
+   every subsequent step (Red, Green, scope check, manual
+   verification, `git mv`, commit). `cd <path>` before running any
+   command and stay there for the rest of the at-bat. The bullpen
+   folder itself is unchanged - the at-bat file move and any reads of
+   `lineup.md` still happen in the bullpen folder, regardless of cwd.
+   If the worktree path doesn't exist on disk, stop and tell the user
+   - lineup recorded a worktree that's no longer there.
 3. **Read the At Bat file.** This is the file `NNN-<slug>.md` referenced
    by the At Bat pointer. Confirm it has the required sections: What,
    Definition of done, Test plan, Scope boundary, Dependencies.
@@ -156,10 +177,34 @@ Create a task for each item and complete in order:
    procedure for step 9.
 7. **Green.** Implement the smallest change that makes the command
    pass. Run it. Confirm the same command that was Red is now Green.
+
+   **Mid-Green stop trigger.** The moment you realize a file listed
+   Out in the Scope boundary must change for Red->Green, STOP. Do
+   not make the edit and document it later - that is the rationalized
+   path the anti-pattern names. Surface to the user with the
+   ambiguity laid out:
+
+   > "Going from Red to Green requires changes to `<file>`, which the
+   > Scope boundary lists Out. The at-bat's test plan implicitly
+   > needs Out work - the doc is wrong. Two ways forward: (a) split,
+   > leave this at-bat test-only with the assertions weakened or
+   > deferred and file a precursor at-bat for the Out work, or (b)
+   > expand this at-bat's Scope boundary explicitly to include
+   > `<file>`. Which?"
+
+   Wait for the user to pick. Do NOT proceed past Red until they do.
+   If you have already started editing Out files when you notice,
+   revert those edits before surfacing - the discussion should be
+   about the right shape, not about ratifying work already done.
 8. **Verify scope boundary.** Re-read the Scope boundary section.
    Confirm your changes are entirely In, nothing Out. If you touched
-   anything Out, revert that and surface it to the user as a candidate
-   for a future at-bat.
+   anything Out, revert it AND surface it to the user as a candidate
+   for a future at-bat. Documenting the Out edit in the
+   `## Verification` section is not a substitute for the revert -
+   the revert is the action, the surfacing is the conversation. If
+   you cannot revert without losing Red->Green, that is the mid-Green
+   stop trigger from step 7 firing late: stop, surface, and let the
+   user choose split vs. expand.
 9. **Manual verification (if applicable).** If the at-bat used the
    no-automated-test escape, EXECUTE the manual steps yourself first.
    Anything shell-runnable counts as executable: launch a backend in
@@ -302,3 +347,6 @@ There is no `.lineup.json`. Lineup and at-bat share bullpen's config.
   user calls the next play.
 - **Honest verification.** If there's no automated test, the manual
   steps must actually be run, not waved at.
+- **Run inside the worktree if one is named.** If `lineup.md` starts
+  with a `Worktree: <path>` header, `cd` into it in step 2 and stay
+  there for every command and commit.
