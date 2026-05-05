@@ -102,8 +102,8 @@ Create a task for each item and complete in order:
 
    Scan immediate children of the discovery root for folders that
    contain `lineup.md` without a `Status: Complete` marker.
-   - Zero live -> tell user to run `lineup` (or `spitball` first if no
-     spitball exists).
+   - Zero live -> tell user to run `lineup` (or `bullpen` first if no
+     bullpen exists).
    - Exactly one live -> use it.
    - Multiple live -> ask the user which one.
 2. **Read the lineup.** Find the At Bat pointer in `lineup.md`. If the
@@ -277,9 +277,9 @@ digraph atbat {
 ## Configuration
 
 Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
-merged config. The script reads `~/.spitball.json` and
-`<repoRoot>/.spitball.json` over defaults and returns JSON. See the
-spitball plugin's `configuration.md` for the schema. At-bat uses:
+merged config. The script reads `~/.bullpen.json` and
+`<repoRoot>/.bullpen.json` over defaults and returns JSON. See the
+bullpen plugin's `configuration.md` for the schema. At-bat uses:
 
 - `effectiveSaveDir` - discovery root for the active lineup.
 - `commitAtBat` - whether to commit the test+impl+file-move together
@@ -289,7 +289,7 @@ spitball plugin's `configuration.md` for the schema. At-bat uses:
   whether to advance into the next at-bat after verifying.
 - `repoRoot` - repo root path (used for `git mv` and commit operations).
 
-There is no `.lineup.json`. Lineup and at-bat share spitball's config.
+There is no `.lineup.json`. Lineup and at-bat share bullpen's config.
 
 ## Key principles
 

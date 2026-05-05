@@ -1,17 +1,17 @@
 # Postmortem template - completion mode
 
-Used when a spitball has been delivered (`Status: Complete` on
+Used when a bullpen has been delivered (`Status: Complete` on
 `lineup.md`) and the user wants to reflect on the at-bat history.
 
 ```markdown
 # Postmortem: <topic>
 
-Spitball: spitball.md
+Bullpen: bullpen.md
 Date: YYYY-MM-DD
 Mode: completion
 
 ## What shipped (vs the plan)
-<concrete: which spitball criteria met, any deviations, evidence>
+<concrete: which bullpen criteria met, any deviations, evidence>
 
 ## Surprises
 <concrete: things we did not expect, with at-bat or commit anchors>

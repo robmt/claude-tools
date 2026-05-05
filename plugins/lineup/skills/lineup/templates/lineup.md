@@ -1,14 +1,14 @@
 # lineup.md file template
 
 Used by the lineup skill when creating or updating `lineup.md` for a
-spitball folder.
+bullpen folder.
 
 ## Active lineup
 
 ```markdown
 # Lineup: <topic>
 
-Spitball: spitball.md
+Bullpen: bullpen.md
 
 ## At Bat
 -> NNN-<slug>.md
@@ -26,7 +26,7 @@ Spitball: spitball.md
 
 ## Completed lineup
 
-When the spitball's completion criteria are met, prepend
+When the bullpen's completion criteria are met, prepend
 `Status: Complete` as the first line of the file:
 
 ```markdown
@@ -34,10 +34,10 @@ Status: Complete
 
 # Lineup: <topic>
 
-Spitball: spitball.md
+Bullpen: bullpen.md
 
 ## At Bat
-(none - spitball delivered)
+(none - bullpen delivered)
 
 ## On Deck
 (none)
@@ -55,7 +55,7 @@ That marker is how a lineup becomes inactive. There is no separate
 metadata file or json sidecar - the filesystem is the truth.
 
 When lineup writes `Status: Complete`, it also moves the entire
-spitball folder from `<effectiveSaveDir>/<folder>/` to
+bullpen folder from `<effectiveSaveDir>/<folder>/` to
 `<effectiveSaveDir>/completed/<folder>/`. Past that point the folder
 lives in the archive bucket; postmortem and future reads find it
 there. See SKILL.md "Completion archive" for the move procedure.

@@ -1,15 +1,15 @@
 # Lineup
 
-A companion plugin to `spitball`. Manages a rolling, narrow view of the work
-in front of you on the way to a spitball's destination. The spitball owns
+A companion plugin to `bullpen`. Manages a rolling, narrow view of the work
+in front of you on the way to a bullpen's destination. The bullpen owns
 the W (where you are going and what done looks like). The lineup owns the
 next three batters.
 
 ## Why
 
-Spitball stops at the design. It deliberately does not produce a forward
+Bullpen stops at the design. It deliberately does not produce a forward
 plan, because long forward plans don't survive contact with reality. But
-when you sit down to actually work toward a spitball, you need *something*
+when you sit down to actually work toward a bullpen, you need *something*
 in front of you that's concrete enough to act on. You don't need the whole
 roadmap; you need the next at-bat.
 
@@ -33,23 +33,23 @@ three.
 
 The In the Hole slot is *not* the closing batter. It is just the third
 batter we currently see. The lineup never reaches the end of itself by
-design — completion comes from the spitball's criteria, not from running
+design — completion comes from the bullpen's criteria, not from running
 out of batters.
 
 ## Layout
 
-One folder per spitball. Spitball and lineup live side by side.
+One folder per bullpen. Bullpen and lineup live side by side.
 
 ```
-docs/spitballs/<date>-<topic>/
-  spitball.md
+docs/bullpen/<date>-<topic>/
+  bullpen.md
   lineup.md
   NNN-<slug>.md            # current at-bat
   completed/
     NNN-<slug>.md          # finished at-bats, in order
 ```
 
-The folder is created by spitball (see "Spitball plugin tweak" below).
+The folder is created by bullpen (see "Bullpen plugin tweak" below).
 Lineup adds `lineup.md`, the at-bat file, and `completed/` when first
 invoked.
 
@@ -60,7 +60,7 @@ Short organizational index. Example:
 ```markdown
 # Lineup: Foo
 
-Spitball: spitball.md
+Bullpen: bullpen.md
 
 ## At Bat
 → 004-wire-cli-flag.md
@@ -77,7 +77,7 @@ Spitball: spitball.md
 - 001-bootstrap-loader.md
 ```
 
-When the spitball's completion criteria are met, the reviewer adds a
+When the bullpen's completion criteria are met, the reviewer adds a
 `Status: Complete` marker at the top. That is how a lineup becomes inactive
 — filesystem-visible state, no separate metadata.
 
@@ -133,11 +133,11 @@ What it does:
 
 1. Discovers active lineups by scanning `<saveDir>` for folders containing
    a `lineup.md` without a `Status: Complete` marker. If none → tells the
-   user to run spitball first. If one → uses it. If many → asks which.
-2. Reads the spitball and current lineup state.
-3. Checks the spitball's completion criteria against current state. If
+   user to run bullpen first. If one → uses it. If many → asks which.
+2. Reads the bullpen and current lineup state.
+3. Checks the bullpen's completion criteria against current state. If
    met → writes `Status: Complete` and stops. The user goes back to the
-   spitball or starts a new one.
+   bullpen or starts a new one.
 4. Otherwise: promotes On Deck → At Bat by creating the next NNN-slug.md
    file with the full required structure. Promotes In the Hole → On Deck
    (inline bullet). Drafts a new In the Hole bullet.
@@ -169,14 +169,14 @@ instead.
 - **Filename** is `NNN-<kebab-slug>.md`. The slug is 3–5 words derived
   from the at-bat's topic.
 - **Active lineup discovery** is filesystem-only. No pointer files, no
-  json state. The skills walk the spitballs directory and apply the
+  json state. The skills walk the bullpens directory and apply the
   one/many/none rule above.
 
 ## Configuration
 
-`lineup` reads `.spitball.json` for shared values:
+`lineup` reads `.bullpen.json` for shared values:
 
-- `saveDir` — same place spitballs go.
+- `saveDir` — same place bullpens go.
 - `autoCommit` — same auto-commit behavior for at-bat completions and
   lineup updates.
 
@@ -185,51 +185,51 @@ add it then.
 
 ## Dependency
 
-`lineup` depends on `spitball`. Strictly one-way:
+`lineup` depends on `bullpen`. Strictly one-way:
 
-- The lineup README states spitball is a prerequisite.
-- Lineup runtime checks for `spitball.md` in the target folder. No
-  spitball → skill stops with a "run spitball first" message.
-- Spitball is not modified to know about lineup. Spitball remains usable
+- The lineup README states bullpen is a prerequisite.
+- Lineup runtime checks for `bullpen.md` in the target folder. No
+  bullpen → skill stops with a "run bullpen first" message.
+- Bullpen is not modified to know about lineup. Bullpen remains usable
   standalone with no awareness that lineup exists.
 
 The lineup plugin's `plugin.json` declares the dependency if Claude Code's
 plugin manifest supports it; otherwise the README carries the constraint.
 
-## Spitball plugin tweak
+## Bullpen plugin tweak
 
-Spitball currently writes to `<saveDir>/<date>-<topic>-spitball.md` (flat
-file). It will instead write to `<saveDir>/<date>-<topic>/spitball.md`
-(folder containing the spitball).
+Bullpen currently writes to `<saveDir>/<date>-<topic>-bullpen.md` (flat
+file). It will instead write to `<saveDir>/<date>-<topic>/bullpen.md`
+(folder containing the bullpen).
 
-This change is justified independently — it gives every spitball a place
+This change is justified independently — it gives every bullpen a place
 to drop related notes, mockups, attachments, etc. — and is neutral to
-whether lineup is installed. A spitball-only user gets a folder containing
+whether lineup is installed. A bullpen-only user gets a folder containing
 one file. Slightly heavier, but small and forward-compatible.
 
-The change is local to spitball's "Write spitball doc" step. No other
-spitball behavior changes.
+The change is local to bullpen's "Write bullpen doc" step. No other
+bullpen behavior changes.
 
-Pre-existing flat-form spitballs are not auto-migrated. They continue to
-work for spitball; lineup simply won't be available for them unless the
+Pre-existing flat-form bullpens are not auto-migrated. They continue to
+work for bullpen; lineup simply won't be available for them unless the
 user manually moves them into a folder.
 
 ## Out of scope (for v1)
 
 - Visual companion integration. (Could come later.)
-- An at-bat that pulls from multiple spitballs. One at-bat = one spitball.
+- An at-bat that pulls from multiple bullpens. One at-bat = one bullpen.
 - Showing more than three slots by default.
-- Automated migration of pre-existing flat spitballs.
+- Automated migration of pre-existing flat bullpens.
 - A `lineup-switch` skill or any pointer-based active-lineup mechanism.
 
 ## Completion criteria for this design
 
-This spitball is "delivered" when:
+This bullpen is "delivered" when:
 
 1. `lineup` plugin exists in `plugins/lineup/` with `plugin.json`, README,
    and the two skills (`lineup`, `at-bat`).
 2. Each skill follows the discipline described above (filesystem-only
    discovery, three-slot cap, red/green test enforcement, no auto-invoke).
-3. The spitball plugin has been updated to write into a folder layout.
-4. A smoke test: run spitball, then lineup, then at-bat, on a small
+3. The bullpen plugin has been updated to write into a folder layout.
+4. A smoke test: run bullpen, then lineup, then at-bat, on a small
    contrived design, and confirm the artifacts match this spec.

@@ -8,10 +8,10 @@ surface useful insight.
 
 ## Completion mode
 
-- **What shipped vs the plan?** Specifically, did any of the spitball's
+- **What shipped vs the plan?** Specifically, did any of the bullpen's
   Completion criteria not get met, or get met in a way that differs
-  from the spitball's described approach?
-- **What surprised us?** Constraints we didn't see in the spitball.
+  from the bullpen's described approach?
+- **What surprised us?** Constraints we didn't see in the bullpen.
   Tools or APIs that didn't behave as expected. Decisions that flipped
   mid-stream.
 - **At-bat sizing.** Were any at-bats too big (multiple commits, dragged
@@ -20,9 +20,9 @@ surface useful insight.
 - **Verification value.** Did lineup's verification step catch anything
   real, or was it always rubber-stamping? If it caught something,
   describe it.
-- **Carry-forward.** Patterns that worked well in this spitball that we
+- **Carry-forward.** Patterns that worked well in this bullpen that we
   want to repeat. (One or two; resist building a process manual.)
-- **Avoid next time.** Specific traps we hit that a future-spitball-self
+- **Avoid next time.** Specific traps we hit that a future-bullpen-self
   would benefit from knowing. (Same: one or two.)
 
 ## Failure mode
@@ -32,10 +32,10 @@ surface useful insight.
 - **Proximate cause.** The immediate thing that did it. (Don't stop
   here.)
 - **Underlying cause.** The decision or assumption upstream that made
-  the proximate cause possible. (Often: the spitball was wrong, or an
+  the proximate cause possible. (Often: the bullpen was wrong, or an
   at-bat skipped a step, or scope crept.)
 - **Detection.** Was it caught at verification, by a test, by a user,
   or only after the fact? How fast?
-- **Prevention.** What single change to the spitball, the lineup
+- **Prevention.** What single change to the bullpen, the lineup
   bootstrap, or the at-bat template would catch this earlier next
   time? (One concrete suggestion. Resist a list.)

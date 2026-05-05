@@ -1,11 +1,11 @@
 ---
 name: lineup
-description: "Use this skill to review or refresh the rolling work state next to a spitball. Trigger on phrases like 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the spitball done', 'check completion', or whenever the user wants to advance the next-step view without doing implementation work. Reads the spitball + current state, promotes On Deck -> At Bat (creates an at-bat file), and stops. Never auto-invokes at-bat or any implementation skill."
+description: "Use this skill to review or refresh the rolling work state next to a bullpen. Trigger on phrases like 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the bullpen done', 'check completion', or whenever the user wants to advance the next-step view without doing implementation work. Reads the bullpen + current state, promotes On Deck -> At Bat (creates an at-bat file), and stops. Never auto-invokes at-bat or any implementation skill."
 ---
 
 # Lineup: Review the Next Three Batters
 
-Manages a small rolling state document next to a spitball. The spitball
+Manages a small rolling state document next to a bullpen. The bullpen
 owns the destination (the W). The lineup owns the next three batters: At
 Bat (concrete), On Deck (fuzzy), In the Hole (very fuzzy). This skill
 reads current state and updates the lineup. It does NOT do the work -
@@ -15,8 +15,8 @@ that is `at-bat`.
 This skill never writes code and never plans more than one new In the
 Hole bullet per cycle. When invoked at the end of an at-bat run, it
 MUST verify the just-completed at-bat's Definition of done before
-promoting (see "Verification mode" below). When the spitball's
-completion criteria are met, lineup MAY move the entire spitball
+promoting (see "Verification mode" below). When the bullpen's
+completion criteria are met, lineup MAY move the entire bullpen
 folder into `<effectiveSaveDir>/completed/<folder>/` as part of
 marking `Status: Complete` (see "Completion archive" below) - this is
 the only move it performs. It MAY invoke `at-bat` at the end of the
@@ -40,7 +40,7 @@ All files this skill writes (`lineup.md`, at-bat files, commit messages, user-fa
   only updates the lineup. If you find yourself wanting to write code,
   stop and tell the user to invoke `at-bat`.
 - **"The In the Hole slot must be the last batter."** No. The lineup
-  never reaches the end of itself. Completion is owned by the spitball.
+  never reaches the end of itself. Completion is owned by the bullpen.
 
 ## Checklist
 
@@ -49,39 +49,39 @@ Create a task for each item and complete in order:
 1. **Discover active lineup.** Run
    `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
    the JSON for `effectiveSaveDir`, `commitAtBat`, `autoContinue`,
-   `repoRoot`, and `liveSpitballs` (an array of `{name, path, mtime}` for every folder
-   under `effectiveSaveDir` that has a `spitball.md` and is not marked
+   `repoRoot`, and `liveBullpens` (an array of `{name, path, mtime}` for every folder
+   under `effectiveSaveDir` that has a `bullpen.md` and is not marked
    `Status: Complete`, sorted by mtime descending - most recently
    touched first). If exit code is non-zero, the cwd is not in a git
    repo while `nestUnderRepoName: true` - refuse and tell the user.
 
    **Try to infer the target from chat context before asking.** Look at
-   the conversation so far: did the user just run `/spitball` and create
+   the conversation so far: did the user just run `/bullpen` and create
    a folder? Did they mention a slug, topic, or path that matches a
-   `liveSpitballs[*].name`? If a clear match exists, announce it ("Picking
-   up the `<name>` spitball from earlier in this chat - say if that's
+   `liveBullpens[*].name`? If a clear match exists, announce it ("Picking
+   up the `<name>` bullpen from earlier in this chat - say if that's
    wrong.") and use it without prompting. Inference rules:
    - Exact slug or path match in recent messages -> use it, announce.
    - Topic words match a folder name (e.g., user said "the auth
      rewrite" and `2026-05-04-auth-rewrite` is live) -> use it, announce.
-   - The most recent message in this session was a `/spitball`
+   - The most recent message in this session was a `/bullpen`
      hand-back referencing a folder under `effectiveSaveDir` -> use it,
      announce.
    - Ambiguous or no chat signal -> fall through to the rules below.
 
    Without a chat-context match:
-   - Zero `liveSpitballs` -> stop and tell the user to run spitball first.
+   - Zero `liveBullpens` -> stop and tell the user to run bullpen first.
    - Exactly one -> use it.
    - Multiple -> list the names (most recent first) and ask the user
      which one to operate on.
-2. **Verify spitball.md exists** in the target folder. If not, refuse
-   to operate; tell the user lineup requires a spitball anchor.
-3. **Read the spitball.** Identify the completion criteria. If the
-   spitball doesn't state explicit completion criteria, ask the user to
-   add them to the spitball before continuing - lineup can't determine
+2. **Verify bullpen.md exists** in the target folder. If not, refuse
+   to operate; tell the user lineup requires a bullpen anchor.
+3. **Read the bullpen.** Identify the completion criteria. If the
+   bullpen doesn't state explicit completion criteria, ask the user to
+   add them to the bullpen before continuing - lineup can't determine
    "done" without them.
 4. **Read or create `lineup.md`.** If absent, this is the first lineup
-   cycle for this spitball: see "First-run bootstrap" below.
+   cycle for this bullpen: see "First-run bootstrap" below.
 5. **Verification mode (when invoked from at-bat).** If the immediately
    prior assistant turn was an at-bat hand-back ("At-bat NNN finished -
    handing to lineup for verification"), verify that at-bat's
@@ -91,7 +91,7 @@ Create a task for each item and complete in order:
    When invoked directly by the user (no at-bat hand-back in the prior
    turn), skip this step - the user is asserting prior state is correct.
 6. **Check completion.** Compare current state (codebase, recent
-   commits, completed at-bats) against the spitball's completion
+   commits, completed at-bats) against the bullpen's completion
    criteria. If met -> write `Status: Complete` at the top of
    `lineup.md`, archive the folder (see "Completion archive" below),
    then skip ahead to step 9 (commit) and step 10 (hand-back). Steps
@@ -130,7 +130,7 @@ Create a task for each item and complete in order:
 
    On first-run bootstrap, replace the header with `## Lineup bootstrapped`
    and the summary with the three slots you just filled. On completion,
-   replace the block with a `## Spitball delivered` header, list the new
+   replace the block with a `## Bullpen delivered` header, list the new
    archive path (`Archived to <effectiveSaveDir>/completed/<folder>/`),
    and replace the Next-step line with a single passive pointer:
    `Optional: run /postmortem to reflect.` The loop is over - do not
@@ -150,7 +150,7 @@ Create a task for each item and complete in order:
      invoke at-bat now. On `session` -> invoke at-bat now and treat
      `autoContinue` as `"always"` for the rest of this conversation. On
      `always` -> invoke at-bat now AND write `autoContinue: "always"`
-     into `<repoRoot>/.spitball.json` (creating it if absent), so the
+     into `<repoRoot>/.bullpen.json` (creating it if absent), so the
      setting persists across sessions for this repo. On `no` -> stop.
    - `"always"` -> skip the prompt, just invoke at-bat directly after the
      hand-back block. The user can interrupt at any time.
@@ -161,9 +161,9 @@ Create a task for each item and complete in order:
 
 ## First-run bootstrap
 
-If `lineup.md` does not exist yet for a spitball:
+If `lineup.md` does not exist yet for a bullpen:
 
-1. Read the spitball carefully. Identify the first concrete unit of work
+1. Read the bullpen carefully. Identify the first concrete unit of work
    the user could plausibly do toward the destination.
 2. Identify two more units, progressively fuzzier.
 3. Create `lineup.md` with all three slots filled:
@@ -229,9 +229,9 @@ turn), skip verification - the user is asserting the prior state.
 
 ## Completion archive
 
-When step 6 detects the spitball's completion criteria are met,
+When step 6 detects the bullpen's completion criteria are met,
 lineup writes `Status: Complete` at the top of `lineup.md` AND moves
-the spitball folder out of the live area so the file tree (and
+the bullpen folder out of the live area so the file tree (and
 Obsidian / IDE previews) stays focused on in-flight work.
 
 Procedure:
@@ -241,7 +241,7 @@ Procedure:
    section. Do this before the move so the move is a clean rename.
 2. **Ensure the archive bucket exists.** If
    `<effectiveSaveDir>/completed/` is missing, create it. The bucket
-   is a flat directory of completed spitball folders; do not nest by
+   is a flat directory of completed bullpen folders; do not nest by
    year or topic.
 3. **Move the folder.** Rename
    `<effectiveSaveDir>/<folder>/` to
@@ -254,9 +254,9 @@ Procedure:
    `Lineup: <topic> complete (archived)`. The commit captures both
    the `Status: Complete` edit and the rename.
 
-The archive bucket is reserved: spitballs must not be named
+The archive bucket is reserved: bullpens must not be named
 `completed`. The resolve-config scan treats a top-level `completed/`
-folder without its own `spitball.md` as the bucket and walks one level
+folder without its own `bullpen.md` as the bucket and walks one level
 down for archived folders.
 
 ## Templates
@@ -281,7 +281,7 @@ digraph lineup {
     "Discover active lineup" [shape=box];
     "Multiple live?" [shape=diamond];
     "Ask which one" [shape=box];
-    "Read spitball" [shape=box];
+    "Read bullpen" [shape=box];
     "Has completion criteria?" [shape=diamond];
     "Ask user to add criteria" [shape=box];
     "lineup.md exists?" [shape=diamond];
@@ -294,9 +294,9 @@ digraph lineup {
 
     "Discover active lineup" -> "Multiple live?";
     "Multiple live?" -> "Ask which one" [label="yes"];
-    "Multiple live?" -> "Read spitball" [label="no, one live"];
-    "Ask which one" -> "Read spitball";
-    "Read spitball" -> "Has completion criteria?";
+    "Multiple live?" -> "Read bullpen" [label="no, one live"];
+    "Ask which one" -> "Read bullpen";
+    "Read bullpen" -> "Has completion criteria?";
     "Has completion criteria?" -> "Ask user to add criteria" [label="no"];
     "Has completion criteria?" -> "lineup.md exists?" [label="yes"];
     "Ask user to add criteria" -> "lineup.md exists?";
@@ -316,16 +316,16 @@ digraph lineup {
 ## Configuration
 
 Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
-merged config. The script reads `~/.spitball.json` and
-`<repoRoot>/.spitball.json` over defaults, derives the repo name, and
-returns JSON. See the spitball plugin's `configuration.md` for the
+merged config. The script reads `~/.bullpen.json` and
+`<repoRoot>/.bullpen.json` over defaults, derives the repo name, and
+returns JSON. See the bullpen plugin's `configuration.md` for the
 schema. Lineup uses these fields from the script output:
 
-- `effectiveSaveDir` - directory to scan for spitball folders. Already
+- `effectiveSaveDir` - directory to scan for bullpen folders. Already
   includes the `<repo-name>` subfolder when `nestUnderRepoName: true`.
-- `liveSpitballs` - pre-computed list of folders with a non-complete
-  `spitball.md`, sorted most-recently-touched first. Used for chat-
-  context inference of the target spitball.
+- `liveBullpens` - pre-computed list of folders with a non-complete
+  `bullpen.md`, sorted most-recently-touched first. Used for chat-
+  context inference of the target bullpen.
 - `commitAtBat` - whether to commit the new at-bat file and updated
   `lineup.md` after promotion (default `true`).
 - `autoContinue` - `"never"` / `"prompt"` (default) / `"always"`.
@@ -334,7 +334,7 @@ schema. Lineup uses these fields from the script output:
 - `repoRoot` - repo root path (used for staging files relative to the
   repo).
 
-There is no `.lineup.json`. Lineup shares spitball's config.
+There is no `.lineup.json`. Lineup shares bullpen's config.
 
 ## Key principles
 
@@ -344,8 +344,8 @@ There is no `.lineup.json`. Lineup shares spitball's config.
 - **Filesystem is truth.** No pointer files, no json tracking, no
   metadata sidecar. The folder structure and the markdown contents are
   the state.
-- **Spitball owns completion.** You read the criteria; you don't define
-  them. If the spitball lacks criteria, push it back to the user.
+- **Bullpen owns completion.** You read the criteria; you don't define
+  them. If the bullpen lacks criteria, push it back to the user.
 - **Honest about uncertainty.** On Deck is fuzzy on purpose. In the Hole
   is fuzzier on purpose. Don't write paragraphs about either - a
   sentence per slot is the budget.

@@ -1,19 +1,19 @@
-# Spitball Reviewer Prompt Template
+# Bullpen Reviewer Prompt Template
 
-Use this template when dispatching a spitball reviewer subagent.
+Use this template when dispatching a bullpen reviewer subagent.
 
-**Purpose:** Verify the spitball is complete, consistent, and honest about its scope.
+**Purpose:** Verify the bullpen is complete, consistent, and honest about its scope.
 
-**Dispatch after:** Spitball document is written to the configured saveDir.
+**Dispatch after:** Bullpen document is written to the configured saveDir.
 
 ```
 Task tool (general-purpose):
-  description: "Review spitball document"
+  description: "Review bullpen document"
   prompt: |
-    You are a spitball reviewer. Verify this document is complete, consistent,
+    You are a bullpen reviewer. Verify this document is complete, consistent,
     and honest about what it claims to know.
 
-    **Spitball to review:** [SPITBALL_FILE_PATH]
+    **Bullpen to review:** [SPITBALL_FILE_PATH]
 
     ## What to Check
 
@@ -37,7 +37,7 @@ Task tool (general-purpose):
 
     ## Output Format
 
-    ## Spitball Review
+    ## Bullpen Review
 
     **Status:** Approved | Issues Found
 

@@ -1,19 +1,19 @@
 ---
 name: postmortem
-description: "Use this skill to write a postmortem reflecting on a spitball's at-bats: what shipped vs the plan, what surprised us, whether the at-bats were sized right, what to carry forward, what to avoid. Trigger on phrases like 'postmortem', 'retro', 'retrospective', 'wrap up the spitball', 'look back at the spitball', 'what did we learn from', 'do a postmortem', or whenever a spitball has been delivered (Status: Complete) and the user wants to reflect. Reads the spitball + lineup.md + completed at-bats + git log; asks 3-5 reflection questions; writes postmortem.md in the spitball folder. Works in two modes: completion (default, spitball delivered) and failure (something broke; what was the cause)."
+description: "Use this skill to write a postmortem reflecting on a bullpen's at-bats: what shipped vs the plan, what surprised us, whether the at-bats were sized right, what to carry forward, what to avoid. Trigger on phrases like 'postmortem', 'retro', 'retrospective', 'wrap up the bullpen', 'look back at the bullpen', 'what did we learn from', 'do a postmortem', or whenever a bullpen has been delivered (Status: Complete) and the user wants to reflect. Reads the bullpen + lineup.md + completed at-bats + git log; asks 3-5 reflection questions; writes postmortem.md in the bullpen folder. Works in two modes: completion (default, bullpen delivered) and failure (something broke; what was the cause)."
 ---
 
-# Postmortem: Reflect On A Spitball's At-Bats
+# Postmortem: Reflect On A Bullpen's At-Bats
 
-Looks back over a spitball and the at-bats executed against it, captures
+Looks back over a bullpen and the at-bats executed against it, captures
 what we learned, and writes a small `postmortem.md` artifact next to
-`spitball.md`. Pairs with `lineup` and `at-bat`: those drive the work
+`bullpen.md`. Pairs with `lineup` and `at-bat`: those drive the work
 forward, this looks back.
 
 <HARD-GATE>
 This skill never writes code, never invokes `lineup` or `at-bat`, and
-never modifies `spitball.md` or `lineup.md`. It reads existing artifacts
-and writes exactly one new file: `postmortem.md` in the spitball folder
+never modifies `bullpen.md` or `lineup.md`. It reads existing artifacts
+and writes exactly one new file: `postmortem.md` in the bullpen folder
 (or `postmortem-NNN.md` if one already exists). It does not advance the
 loop in any direction.
 </HARD-GATE>
@@ -27,16 +27,16 @@ for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses.
 
 ## When to use
 
-- A spitball was delivered (lineup.md starts with `Status: Complete`),
+- A bullpen was delivered (lineup.md starts with `Status: Complete`),
   and the user wants to reflect before moving on.
 - Mid-flight reflection: the user explicitly asks for one even though
-  the spitball isn't complete (rare but valid).
+  the bullpen isn't complete (rare but valid).
 - Failure mode: something went wrong (verification failed, an at-bat
   regressed, the design didn't survive contact). The user invokes
   postmortem to capture cause and prevention.
 
 The skill picks up the right mode from chat context. If unclear, ask
-once: "Completion postmortem (looking back over a delivered spitball)
+once: "Completion postmortem (looking back over a delivered bullpen)
 or failure postmortem (something broke; what was the cause)?"
 
 ## Anti-patterns
@@ -48,9 +48,9 @@ or failure postmortem (something broke; what was the cause)?"
   process, not about who did what. Names appear only when concretely
   useful for follow-up.
 - **"Recommend a giant refactor."** No. The carry-forward section is
-  for patterns to repeat or traps to avoid in the next spitball.
-  Concrete next-spitball suggestions live in the user's head until they
-  open `/spitball`. Don't try to write the next plan here.
+  for patterns to repeat or traps to avoid in the next bullpen.
+  Concrete next-bullpen suggestions live in the user's head until they
+  open `/bullpen`. Don't try to write the next plan here.
 - **"Speculate on root cause without evidence."** In failure mode,
   point at the commits, the at-bat files, the test output, the build
   logs. If you don't have evidence, say "unknown" rather than guess.
@@ -62,26 +62,26 @@ Create a task for each item and complete in order:
 1. **Resolve config.** Run
    `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
    the JSON for `effectiveSaveDir`, `commitAtBat`, `repoRoot`,
-   `liveSpitballs`, and `completedSpitballs`. If exit code is
+   `liveBullpens`, and `completedBullpens`. If exit code is
    non-zero, the cwd is not in a git repo while `nestUnderRepoName:
    true` - refuse and tell the user.
 
-2. **Pick the target spitball.** Try chat-context inference first (same
+2. **Pick the target bullpen.** Try chat-context inference first (same
    rules as lineup's discovery): exact slug or path, topic words
-   matching a folder name, the most recent `/spitball` or `/lineup` or
+   matching a folder name, the most recent `/bullpen` or `/lineup` or
    `/at-bat` invocation. If matched, announce and proceed.
 
    Without a chat match, use the two pre-computed lists from step 1:
-   - **Completed**: `completedSpitballs` - folders inside
+   - **Completed**: `completedBullpens` - folders inside
      `<effectiveSaveDir>/completed/` (archived by lineup on
      completion), plus any legacy top-level folders whose `lineup.md`
      starts with `Status: Complete` that haven't been moved yet.
-   - **Live**: `liveSpitballs` - folders at the top level of
+   - **Live**: `liveBullpens` - folders at the top level of
      `<effectiveSaveDir>` whose `lineup.md` does not start with
      `Status: Complete` (or has no `lineup.md`).
 
    Default rules:
-   - Zero candidates -> stop and tell the user no spitball folder was
+   - Zero candidates -> stop and tell the user no bullpen folder was
      found.
    - Exactly one (live or completed) -> use it.
    - Multiple -> list candidates with their status (live vs complete)
@@ -92,23 +92,23 @@ Create a task for each item and complete in order:
    numbered at-bat files (`NNN-*.md`) at the folder root. If neither
    exists, stop and tell the user: "There are no at-bats to look back
    on. The postmortem skill operates on at-bat history. If you want to
-   reflect on the spitball alone, open the file and write notes
+   reflect on the bullpen alone, open the file and write notes
    directly." Do NOT proceed with an at-bat-less postmortem.
 
 4. **Read the artifacts.**
-   - `spitball.md` - the design and completion criteria.
+   - `bullpen.md` - the design and completion criteria.
    - `lineup.md` - current state (or final state if completed).
    - All `NNN-*.md` files in `completed/` and at the folder root - the
      executed at-bats.
    - Optional: `git log --oneline` for commits touching this folder
      (`git log -- <effectiveSaveDir>/<folder>/`) and commits in the
-     `repoRoot` from the spitball's start date forward, scoped to paths
+     `repoRoot` from the bullpen's start date forward, scoped to paths
      touched by the at-bats. Use these to ground claims about what
      shipped.
 
 5. **Decide the mode.**
    - **Completion mode**: lineup.md starts with `Status: Complete`, or
-     the user said "wrap up" / "deliver" / "retro the spitball." This
+     the user said "wrap up" / "deliver" / "retro the bullpen." This
      is the default.
    - **Failure mode**: the user said "verification failed" / "regressed"
      / "broke" / "what went wrong," or there's a `## Verification
@@ -127,7 +127,7 @@ Create a task for each item and complete in order:
    below) for starting points. Pick the 3-5 most relevant; do not ask
    all of them.
 
-7. **Synthesize and write `postmortem.md`** to the spitball folder. If
+7. **Synthesize and write `postmortem.md`** to the bullpen folder. If
    `postmortem.md` already exists, write `postmortem-002.md` (next
    unused integer; never overwrite a previous postmortem). Use the
    template sidecar (see "Templates" below). Anchor every claim
@@ -151,9 +151,9 @@ Create a task for each item and complete in order:
    approve.
 
 10. **Commit if `commitAtBat` is true** (default). The postmortem lives
-    in the spitball folder alongside the at-bat history; it shares the
-    at-bat commit flag, not the spitball-doc commit flag (which only
-    governs the original spitball write). Use a short commit message
+    in the bullpen folder alongside the at-bat history; it shares the
+    at-bat commit flag, not the bullpen-doc commit flag (which only
+    governs the original bullpen write). Use a short commit message
     like `Postmortem: <topic>`. If `commitAtBat` is false, leave it for
     the user.
 
@@ -168,7 +168,7 @@ Create a task for each item and complete in order:
     ```
 
     Do NOT add a "Next step" line. The postmortem is terminal. The user
-    decides whether to start a new spitball, return to existing work,
+    decides whether to start a new bullpen, return to existing work,
     or close the loop here.
 
 ## Question library
@@ -203,7 +203,7 @@ real content. Don't fabricate.
 ```dot
 digraph postmortem {
     "Resolve config" [shape=box];
-    "Pick target spitball" [shape=box];
+    "Pick target bullpen" [shape=box];
     "Has at-bats?" [shape=diamond];
     "Stop, no at-bats" [shape=doublecircle];
     "Read artifacts" [shape=box];
@@ -215,8 +215,8 @@ digraph postmortem {
     "Commit if commitAtBat" [shape=box];
     "Hand back" [shape=doublecircle];
 
-    "Resolve config" -> "Pick target spitball";
-    "Pick target spitball" -> "Has at-bats?";
+    "Resolve config" -> "Pick target bullpen";
+    "Pick target bullpen" -> "Has at-bats?";
     "Has at-bats?" -> "Stop, no at-bats" [label="no"];
     "Has at-bats?" -> "Read artifacts" [label="yes"];
     "Read artifacts" -> "Decide mode";
@@ -235,19 +235,19 @@ digraph postmortem {
 Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
 merged config. Postmortem uses these fields:
 
-- `effectiveSaveDir` - directory to scan for spitball folders.
-- `liveSpitballs` - top-level non-complete folders (mid-flight
+- `effectiveSaveDir` - directory to scan for bullpen folders.
+- `liveBullpens` - top-level non-complete folders (mid-flight
   reflection or rare in-progress postmortems).
-- `completedSpitballs` - folders in the archive bucket
+- `completedBullpens` - folders in the archive bucket
   (`<effectiveSaveDir>/completed/`) plus any legacy top-level
   completed folders. The default postmortem target.
 - `commitAtBat` - whether to commit the postmortem.md after writing
   (postmortem lives in the at-bat-history side of the folder, so it
-  rides the at-bat commit flag, not the spitball-doc flag).
+  rides the at-bat commit flag, not the bullpen-doc flag).
 - `repoRoot` - repo root path (used for staging files relative to the
   repo).
 
-There is no `.postmortem.json`. Postmortem shares spitball's config.
+There is no `.postmortem.json`. Postmortem shares bullpen's config.
 
 ## Key principles
 
@@ -256,8 +256,8 @@ There is no `.postmortem.json`. Postmortem shares spitball's config.
 - **Short.** A postmortem under one printed page is more useful than a
   long one. Resist the urge to compose.
 - **No next plan.** This is the look-back. The look-forward starts when
-  the user opens `/spitball` again.
+  the user opens `/bullpen` again.
 - **Honest about unknowns.** "We don't know why X happened" is a
   legitimate finding. Mark it and move on.
 - **Never auto-invoke.** Postmortem is terminal. Do not chain into
-  spitball, lineup, or at-bat at the end.
+  bullpen, lineup, or at-bat at the end.

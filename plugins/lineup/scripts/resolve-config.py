@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Resolve the effective spitball config for the current cwd.
+"""Resolve the effective bullpen config for the current cwd.
 
-Reads ~/.spitball.json (global) and <repoRoot>/.spitball.json (per-repo),
+Reads ~/.bullpen.json (global) and <repoRoot>/.bullpen.json (per-repo),
 merges them per-key over hardcoded defaults, derives the repo name from
 git, and computes the effective save directory. Prints the result as
 JSON to stdout.
+
+Legacy: if .bullpen.json is absent, falls back to the older
+.spitball.json filename at the same path with a one-line stderr note.
 
 Exits non-zero (with an error JSON on stdout) if nestUnderRepoName is
 true but the cwd is not inside a git repo.
@@ -18,8 +21,8 @@ import sys
 from pathlib import Path
 
 DEFAULTS = {
-    "saveDir": "docs/spitballs",
-    "commitSpitball": True,
+    "saveDir": "docs/bullpen",
+    "commitBullpen": True,
     "commitAtBat": True,
     "nestUnderRepoName": False,
     "autoContinue": "prompt",
@@ -31,16 +34,23 @@ VALID_AUTO_CONTINUE = {"never", "prompt", "always"}
 def apply_layer(config, layer):
     """Merge one config layer into the running config.
 
-    Honors a legacy ``autoCommit`` key by mapping it to ``commitSpitball``
-    when no explicit ``commitSpitball`` is set in the same layer. This lets
-    users who answered "no commit" at setup time keep that meaning for the
-    spitball doc without accidentally suppressing per-at-bat commits, which
-    are needed for revertable history.
+    Honors two legacy keys that map to ``commitBullpen``:
+    - ``commitSpitball`` (the previous name for this knob)
+    - ``autoCommit`` (the original name, predating the spitball/at-bat split)
+
+    The most-specific key in the layer wins: ``commitBullpen`` over
+    ``commitSpitball`` over ``autoCommit``. This lets users who answered
+    "no commit" at setup time keep that meaning for the bullpen doc
+    without accidentally suppressing per-at-bat commits, which are needed
+    for revertable history.
     """
     if not isinstance(layer, dict):
         return
-    if "autoCommit" in layer and "commitSpitball" not in layer:
-        config["commitSpitball"] = layer["autoCommit"]
+    if "commitBullpen" not in layer:
+        if "commitSpitball" in layer:
+            config["commitBullpen"] = layer["commitSpitball"]
+        elif "autoCommit" in layer:
+            config["commitBullpen"] = layer["autoCommit"]
     for k, v in layer.items():
         if k in DEFAULTS:
             config[k] = v
@@ -58,6 +68,25 @@ def load_json(path: Path):
             file=sys.stderr,
         )
         return None
+
+
+def load_config_layer(base: Path):
+    """Load the config layer at ``base``, preferring .bullpen.json.
+
+    Falls back to legacy .spitball.json with a one-line stderr note if
+    only the legacy file is present. Returns the parsed dict (or None).
+    """
+    bp = base / ".bullpen.json"
+    if bp.exists():
+        return load_json(bp)
+    sp = base / ".spitball.json"
+    if sp.exists():
+        print(
+            f"note: reading legacy {sp}; rename to {bp} when convenient.",
+            file=sys.stderr,
+        )
+        return load_json(sp)
+    return None
 
 
 def repo_root():
@@ -112,7 +141,7 @@ def repo_name(root: Path):
     return f"{parts[-2]}-{parts[-1]}"
 
 
-def _spitball_entry(path: Path):
+def _bullpen_entry(path: Path):
     try:
         mtime = path.stat().st_mtime
     except OSError:
@@ -127,6 +156,14 @@ def _safe_iterdir(path: Path):
         return []
 
 
+def _has_bullpen_doc(folder: Path):
+    """A folder is a bullpen folder if it contains bullpen.md or the
+    legacy spitball.md. New folders are written with bullpen.md; legacy
+    folders are still recognized so existing data keeps working.
+    """
+    return (folder / "bullpen.md").exists() or (folder / "spitball.md").exists()
+
+
 def _is_complete(folder: Path):
     lineup_md = folder / "lineup.md"
     if not lineup_md.exists():
@@ -138,15 +175,17 @@ def _is_complete(folder: Path):
     return head.startswith("Status: Complete")
 
 
-def scan_spitballs(effective):
-    """Walk effectiveSaveDir for live and completed spitball folders.
+def scan_bullpens(effective):
+    """Walk effectiveSaveDir for live and completed bullpen folders.
 
-    Live: top-level folders with spitball.md whose lineup.md does not
-    start with Status: Complete (or has no lineup.md yet).
+    Live: top-level folders with bullpen.md (or legacy spitball.md) whose
+    lineup.md does not start with Status: Complete (or has no lineup.md
+    yet).
 
     Completed:
-    - folders inside <effective>/completed/ that contain spitball.md
-      (the archived layout written by lineup on completion), AND
+    - folders inside <effective>/completed/ that contain bullpen.md (or
+      legacy spitball.md), the archived layout written by lineup on
+      completion, AND
     - top-level folders whose lineup.md starts with Status: Complete
       (legacy, pre-archival layout - included so postmortem can still
       find them).
@@ -166,24 +205,24 @@ def scan_spitballs(effective):
         if not child.is_dir():
             continue
         # The archive bucket: a top-level "completed" dir without its
-        # own spitball.md. Recurse one level for archived spitballs.
-        if child.name == "completed" and not (child / "spitball.md").exists():
+        # own bullpen doc. Recurse one level for archived folders.
+        if child.name == "completed" and not _has_bullpen_doc(child):
             for grandchild in _safe_iterdir(child):
                 if not grandchild.is_dir():
                     continue
-                if not (grandchild / "spitball.md").exists():
+                if not _has_bullpen_doc(grandchild):
                     continue
-                completed.append(_spitball_entry(grandchild))
+                completed.append(_bullpen_entry(grandchild))
             continue
-        if not (child / "spitball.md").exists():
+        if not _has_bullpen_doc(child):
             continue
         complete = _is_complete(child)
         if complete is True:
-            completed.append(_spitball_entry(child))
+            completed.append(_bullpen_entry(child))
         else:
             if complete is False:
                 lineup_active = True
-            live.append(_spitball_entry(child))
+            live.append(_bullpen_entry(child))
 
     live.sort(key=lambda e: e["mtime"], reverse=True)
     completed.sort(key=lambda e: e["mtime"], reverse=True)
@@ -194,9 +233,9 @@ def main():
     root = repo_root()
 
     config = dict(DEFAULTS)
-    apply_layer(config, load_json(Path.home() / ".spitball.json"))
+    apply_layer(config, load_config_layer(Path.home()))
     if root:
-        apply_layer(config, load_json(root / ".spitball.json"))
+        apply_layer(config, load_config_layer(root))
 
     if config["autoContinue"] not in VALID_AUTO_CONTINUE:
         config["autoContinue"] = DEFAULTS["autoContinue"]
@@ -212,17 +251,17 @@ def main():
         if not root:
             print(json.dumps({
                 "error": "nestUnderRepoName is true but cwd is not inside a git repo",
-                "fix": "run from inside a git repo, or set nestUnderRepoName: false in this project's .spitball.json",
+                "fix": "run from inside a git repo, or set nestUnderRepoName: false in this project's .bullpen.json",
             }))
             sys.exit(1)
         rname = repo_name(root)
         effective = os.path.join(save_dir, rname)
 
-    live_spitballs, completed_spitballs, lineup_active = scan_spitballs(effective)
+    live_bullpens, completed_bullpens, lineup_active = scan_bullpens(effective)
 
     result = {
         "saveDir": save_dir,
-        "commitSpitball": config["commitSpitball"],
+        "commitBullpen": config["commitBullpen"],
         "commitAtBat": config["commitAtBat"],
         "nestUnderRepoName": config["nestUnderRepoName"],
         "autoContinue": config["autoContinue"],
@@ -230,8 +269,8 @@ def main():
         "effectiveSaveDir": effective,
         "repoRoot": str(root) if root else None,
         "lineupActive": lineup_active,
-        "liveSpitballs": live_spitballs,
-        "completedSpitballs": completed_spitballs,
+        "liveBullpens": live_bullpens,
+        "completedBullpens": completed_bullpens,
     }
     print(json.dumps(result, indent=2))
 

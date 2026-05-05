@@ -1,11 +1,11 @@
 ---
-name: spitball
-description: "You MUST use this before any creative work, creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation. Trigger on phrases like 'spitball this', 'let's brainstorm', 'design X', 'sketch X', or any new piece of work proposed before code is written. Produces a small spitball artifact and stops; the next step (planning, implementation) is left to the user, never auto-invoked."
+name: bullpen
+description: "You MUST use this before any creative work, creating features, building components, adding functionality, modifying behavior, or starting a new project. Explores user intent, requirements and design before implementation. Trigger on phrases like 'bullpen this', 'send to the bullpen', 'warm up an idea', 'brainstorm', 'let's brainstorm', 'brainstorm this', 'design X', 'sketch X', 'rough out X', 'shape up X', 'scope out X', 'explore X', 'kick off X', 'starting a new project', 'new project', 'starting fresh', or any new piece of work proposed before code is written. Produces a small bullpen artifact and stops; the next step (planning, implementation) is left to the user, never auto-invoked."
 ---
 
-# Spitball: Ideas Into Designs
+# Bullpen: Ideas Into Designs
 
-Help turn ideas into fully formed designs through natural collaborative dialogue. The output is a small artifact called a *spitball*: a design captured at the depth we honestly know it, no further. We don't write hundreds of lines of forward plan that won't survive contact with reality.
+Help turn ideas into fully formed designs through natural collaborative dialogue. The output is a small artifact called a *bullpen*: a design captured at the depth we honestly know it, no further. We don't write hundreds of lines of forward plan that won't survive contact with reality.
 
 Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
 
@@ -15,7 +15,7 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 ## Output rule: ASCII only
 
-All files this skill writes (the spitball.md doc, any commit messages, any user-facing prose) MUST use ASCII characters only. No emoji, no em-dashes, no curly quotes, no arrows, no non-breaking spaces. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses. This keeps content portable across editors, terminals, and operating systems.
+All files this skill writes (the bullpen.md doc, any commit messages, any user-facing prose) MUST use ASCII characters only. No emoji, no em-dashes, no curly quotes, no arrows, no non-breaking spaces. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses. This keeps content portable across editors, terminals, and operating systems.
 
 ## Right-sizing the ritual
 
@@ -37,32 +37,32 @@ The skill stays valuable across the whole range by being honest about which mode
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.spitball.json` and `<repoRoot>/.spitball.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `commitSpitball`, `commitAtBat`, `nestUnderRepoName`, `autoContinue`, `repoName`, `effectiveSaveDir`, `repoRoot`, `lineupActive`, and `liveSpitballs`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` - refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `spitball-setup` is available. `lineupActive` is `true` when any sibling spitball folder under `effectiveSaveDir` already has a `lineup.md` - use it in step 8's hand-back message. Spitball uses `commitSpitball` (not `commitAtBat`) for the file-write commit in step 6. See `configuration.md` only if you need the schema for an edge case.
+1. **Resolve config** - run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. It merges `~/.bullpen.json` and `<repoRoot>/.bullpen.json` over defaults, derives the repo name, and returns JSON with `saveDir`, `commitBullpen`, `commitAtBat`, `nestUnderRepoName`, `autoContinue`, `repoName`, `effectiveSaveDir`, `repoRoot`, `lineupActive`, and `liveBullpens`. If exit code is non-zero, the cwd is not in a git repo while `nestUnderRepoName: true` - refuse to run and tell the user to either run from inside a git repo or set `nestUnderRepoName: false`. If neither config file exists, the script returns defaults; mention that `bullpen-setup` is available. `lineupActive` is `true` when any sibling bullpen folder under `effectiveSaveDir` already has a `lineup.md` - use it in step 8's hand-back message. Bullpen uses `commitBullpen` (not `commitAtBat`) for the file-write commit in step 6. See `configuration.md` only if you need the schema for an edge case.
 2. **Note project context** - the harness usually loads `README.md` and `CLAUDE.md` already. Use those. Do NOT scan the tree, list files, read commits, or open other files yet - you don't know what's relevant until the user describes the work. Lazy reads come during the clarifying-questions phase, justified by what the user said.
-3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. **One of your first questions, unless context already makes it obvious, is the delivery shape**: will this work be pushed to a remote and merged via a PR, or kept local? Default assumption is local-only - more work stays on the local branch than goes through PR. Capture the answer in the spitball doc (a one-line "Delivery: local-only" or "Delivery: push to remote, merge via PR" near the top is enough) so the agent doesn't drift into PR-shaped suggestions later when the user never asked for them. Reads must follow these rules:
+3. **Ask clarifying questions** - one at a time, understand purpose, constraints, success criteria. **One of your first questions, unless context already makes it obvious, is the delivery shape**: will this work be pushed to a remote and merged via a PR, or kept local? Default assumption is local-only - more work stays on the local branch than goes through PR. Capture the answer in the bullpen doc (a one-line "Delivery: local-only" or "Delivery: push to remote, merge via PR" near the top is enough) so the agent doesn't drift into PR-shaped suggestions later when the user never asked for them. Reads must follow these rules:
    - Read **only paths the user explicitly named**, at the path they named (relative to the project working directory unless they gave an absolute path).
    - If a named path does not exist in the cwd, **ask the user** - do not go searching `saveDir`, notes vaults, sibling branches, or any other location for a "similar" file. The user's reference is the only authoritative source for what to read.
-   - **`saveDir` is for writing spitballs, never for reading them.** Don't prospect there for related notes, prior spitballs, or anything else. If you need to know what spitballs exist, ask the user.
+   - **`saveDir` is for writing bullpens, never for reading them.** Don't prospect there for related notes, prior bullpens, or anything else. If you need to know what bullpens exist, ask the user.
 4. **Pick the right mode** - mechanical (one obvious path) or design-bearing (genuine alternatives exist). For mechanical, skip to step 5 with a brief recommendation, no alternatives. For design-bearing, propose 2-3 genuine approaches with trade-offs and your recommendation. Don't invent alternatives to fill a slot.
 5. **Present design.** Mechanical tasks: one short message covering the whole design, then one approval. Design-bearing tasks: break into sections and ask after each section. Per-section gates are for long designs only - on a short design they're wasted round trips.
-6. **Write spitball doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md` (a folder per spitball, with `spitball.md` inside). If `commitSpitball` is `true` (default), commit the file. If `false`, leave it for the user to commit. Note: shared/central save dirs (notes vaults, etc.) are typically not git repos; `commitSpitball: false` is the right answer there.
-7. **Spitball self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
-8. **User reviews written spitball** - ask user to review the file before stopping.
+6. **Write bullpen doc** - save to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/bullpen.md` (a folder per bullpen, with `bullpen.md` inside). If `commitBullpen` is `true` (default), commit the file. If `false`, leave it for the user to commit. Note: shared/central save dirs (notes vaults, etc.) are typically not git repos; `commitBullpen: false` is the right answer there.
+7. **Bullpen self-review** - quick inline check for placeholders, contradictions, ambiguity, scope (see below).
+8. **User reviews written bullpen** - ask user to review the file before stopping.
 9. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
 
 ## Process Flow
 
 ```dot
-digraph spitball {
+digraph bullpen {
     "Resolve config\n(helper script)" [shape=box];
     "Note project context\n(README, CLAUDE.md)" [shape=box];
     "Ask clarifying questions\n(lazy file reads)" [shape=box];
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
-    "Write spitball doc" [shape=box];
-    "Spitball self-review\n(fix inline)" [shape=box];
-    "User reviews spitball?" [shape=diamond];
+    "Write bullpen doc" [shape=box];
+    "Bullpen self-review\n(fix inline)" [shape=box];
+    "User reviews bullpen?" [shape=diamond];
     "Stop and hand back" [shape=doublecircle];
 
     "Resolve config\n(helper script)" -> "Note project context\n(README, CLAUDE.md)";
@@ -80,15 +80,15 @@ digraph spitball {
     "Present design (one msg)" -> "User approves design?";
     "Present design (sections)" -> "User approves design?";
     "User approves design?" -> "Pick mode" [label="no, revise"];
-    "User approves design?" -> "Write spitball doc" [label="yes"];
-    "Write spitball doc" -> "Spitball self-review\n(fix inline)";
-    "Spitball self-review\n(fix inline)" -> "User reviews spitball?";
-    "User reviews spitball?" -> "Write spitball doc" [label="changes requested"];
-    "User reviews spitball?" -> "Stop and hand back" [label="approved"];
+    "User approves design?" -> "Write bullpen doc" [label="yes"];
+    "Write bullpen doc" -> "Bullpen self-review\n(fix inline)";
+    "Bullpen self-review\n(fix inline)" -> "User reviews bullpen?";
+    "User reviews bullpen?" -> "Write bullpen doc" [label="changes requested"];
+    "User reviews bullpen?" -> "Stop and hand back" [label="approved"];
 }
 ```
 
-**The terminal state is stopping.** Do NOT invoke `writing-plans`, `north-star-planning`, `frontend-design`, `mcp-builder`, or any other skill at the end. Spitball ends with the artifact saved and the user back in control. The user decides if and when to make any handoff.
+**The terminal state is stopping.** Do NOT invoke `writing-plans`, `north-star-planning`, `frontend-design`, `mcp-builder`, or any other skill at the end. Bullpen ends with the artifact saved and the user back in control. The user decides if and when to make any handoff.
 
 ## The Process
 
@@ -96,7 +96,7 @@ digraph spitball {
 
 - The harness usually has `README.md` and `CLAUDE.md` already loaded - work from those. Do not list directories, scan source, or read commits before the user has named the topic. When you do reach for a file, do it lazily, justified by something specific the user just said.
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
-- If the project is too large for a single spitball, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then spitball the first sub-project through the normal design flow. Each sub-project gets its own spitball cycle.
+- If the project is too large for a single bullpen, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then bullpen the first sub-project through the normal design flow. Each sub-project gets its own bullpen cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea.
 - Early in the question phase, establish the delivery shape (local-only vs push+PR) unless the user has already made it clear. Default to local-only. This anchors how the agent talks about "completion" later - don't slip into "open a PR" / "push the branch" suggestions on local-only work.
 - Prefer multiple choice questions when possible, but open-ended is fine too.
@@ -118,10 +118,10 @@ digraph spitball {
 
 **Right-sizing the artifact:**
 
-- The spitball captures what we honestly know. Constraints we can name, decisions we have actually made, components we are confident about.
+- The bullpen captures what we honestly know. Constraints we can name, decisions we have actually made, components we are confident about.
 - It is not a forward plan. Do not enumerate phases, milestones, or timeline estimates that you are guessing at. Anything past what you actually know is theater.
 - If a section is best expressed as "we will figure this out when we get there", say so and move on.
-- A short, honest spitball beats a long, speculative one.
+- A short, honest bullpen beats a long, speculative one.
 
 **Design for isolation and clarity:**
 
@@ -141,12 +141,12 @@ digraph spitball {
 
 **Documentation:**
 
-- Write the validated spitball to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/spitball.md`, using the `effectiveSaveDir` value from step 1's helper output. The folder gives every spitball a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
+- Write the validated bullpen to `<effectiveSaveDir>/YYYY-MM-DD-<topic>/bullpen.md`, using the `effectiveSaveDir` value from step 1's helper output. The folder gives every bullpen a place for related notes or companion-plugin artifacts (e.g., `lineup.md`).
 - Use `elements-of-style:writing-clearly-and-concisely` skill if available.
-- If `commitSpitball: true`, commit the spitball document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
+- If `commitBullpen: true`, commit the bullpen document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
 
-**Spitball Self-Review:**
-After writing the spitball document, look at it with fresh eyes:
+**Bullpen Self-Review:**
+After writing the bullpen document, look at it with fresh eyes:
 
 1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
 2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
@@ -157,9 +157,9 @@ After writing the spitball document, look at it with fresh eyes:
 Fix any issues inline. No need to re-review, just fix and move on.
 
 **User Review Gate:**
-After the spitball review loop passes, ask the user to review the written file before stopping:
+After the bullpen review loop passes, ask the user to review the written file before stopping:
 
-> "Spitball written and committed to `<path>`. Please review it and let me know if you want to make any changes. When you are ready to start work or build a plan, kick off the next thing yourself."
+> "Bullpen written and committed to `<path>`. Please review it and let me know if you want to make any changes. When you are ready to start work or build a plan, kick off the next thing yourself."
 
 If `lineupActive` was `true` in step 1's config output, append one short line to that message:
 
@@ -171,7 +171,7 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Handing off:**
 
-- The spitball ends here. Do NOT invoke any planning or implementation skill.
+- The bullpen ends here. Do NOT invoke any planning or implementation skill.
 - If the user has a follow-up planning skill they prefer (for example, `north-star-planning` or `writing-plans`), they will invoke it themselves.
 
 ## Key Principles
@@ -182,4 +182,4 @@ Wait for the user's response. If they request changes, make them and re-run the 
 - **Explore alternatives only when they exist.** If the task has one obvious path, recommend it. Inventing 2-3 approaches for a one-path task is theater.
 - **Right-sized validation.** Mechanical tasks: one approval on the whole short design. Design-bearing tasks: per-section approval. Don't gate small things.
 - **Be flexible.** Go back and clarify when something doesn't make sense.
-- **Honest about uncertainty.** A spitball captures what we know, not what we're guessing.
+- **Honest about uncertainty.** A bullpen captures what we know, not what we're guessing.

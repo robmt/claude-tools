@@ -1,6 +1,6 @@
 # lineup
 
-A companion to `spitball`. The spitball owns the destination: where you are
+A companion to `bullpen`. The bullpen owns the destination: where you are
 going and what done looks like. The lineup owns the next three batters.
 
 Three slots, hard cap:
@@ -11,7 +11,7 @@ Three slots, hard cap:
 
 Anything past In the Hole is in the dugout: not tracked, not speculated
 about. The lineup never reaches the end of itself by design - completion
-comes from the spitball's criteria, not from running out of batters.
+comes from the bullpen's criteria, not from running out of batters.
 
 ## Install
 
@@ -19,45 +19,45 @@ comes from the spitball's criteria, not from running out of batters.
 /plugin install lineup@claude-tools
 ```
 
-**Requires `spitball`** (one-way dependency). Install spitball first:
+**Requires `bullpen`** (one-way dependency). Install bullpen first:
 
 ```bash
-/plugin install spitball@claude-tools
+/plugin install bullpen@claude-tools
 ```
 
-Also requires `python3` and `git` on PATH (used by the config-resolution helper script, identical to spitball's).
+Also requires `python3` and `git` on PATH (used by the config-resolution helper script, identical to bullpen's).
 
-The lineup skill will refuse to run if no spitball exists in the target
+The lineup skill will refuse to run if no bullpen exists in the target
 folder.
 
 ## How it works
 
-Each spitball gets its own folder under `<saveDir>` (or
+Each bullpen gets its own folder under `<saveDir>` (or
 `<saveDir>/<repo-name>` when `nestUnderRepoName: true`; configured via
-`~/.spitball.json` and/or `<repoRoot>/.spitball.json`, defaults to
-`docs/spitballs/`). The lineup adds files inside that same folder:
+`~/.bullpen.json` and/or `<repoRoot>/.bullpen.json`, defaults to
+`docs/bullpen/`). The lineup adds files inside that same folder:
 
 ```
-docs/spitballs/2026-04-29-foo/         # in flight
-  spitball.md             # written by spitball
+docs/bullpen/2026-04-29-foo/         # in flight
+  bullpen.md             # written by bullpen
   lineup.md               # rolling state index (At Bat / On Deck / In the Hole)
   004-wire-cli-flag.md    # current at-bat (only the concrete one is a file)
-  completed/              # at-bat history (inside a spitball folder)
+  completed/              # at-bat history (inside a bullpen folder)
     001-bootstrap-loader.md
     002-add-yaml-parser.md
     003-validate-schema.md
-docs/spitballs/completed/              # archive bucket (sibling of live folders)
-  2026-03-14-bar/         # entire spitball folder, moved here on completion
-    spitball.md
+docs/bullpen/completed/              # archive bucket (sibling of live folders)
+  2026-03-14-bar/         # entire bullpen folder, moved here on completion
+    bullpen.md
     lineup.md             # starts with `Status: Complete`
     completed/            # at-bat history travels with the folder
       001-...md
     postmortem.md         # written later by /postmortem (optional)
 ```
 
-The `completed/` inside a spitball folder is at-bat history. The
+The `completed/` inside a bullpen folder is at-bat history. The
 top-level `<saveDir>/completed/` is the archive bucket of finished
-spitballs. They share a name only because both mean "done at this
+bullpens. They share a name only because both mean "done at this
 level" - they are at different depths and never overlap.
 
 `lineup.md` is short - a pointer to the current at-bat file plus inline
@@ -69,11 +69,11 @@ yet understand.
 
 ### `lineup` (the reviewer)
 
-Reads the spitball and current state, then:
+Reads the bullpen and current state, then:
 
-1. Checks the spitball's completion criteria. If met -> marks the lineup
+1. Checks the bullpen's completion criteria. If met -> marks the lineup
    `Status: Complete`, moves the folder into `<saveDir>/completed/`,
-   and stops. The archive keeps live spitballs uncluttered for
+   and stops. The archive keeps live bullpens uncluttered for
    directory previews (Obsidian, IDE trees) and `git status`.
 2. Otherwise: promotes On Deck -> At Bat (creates the next `NNN-<slug>.md`
    file with full structure including a required Test plan), promotes In
@@ -111,24 +111,24 @@ Complete` marker:
 
 - One live -> use it
 - Many -> ask the user which
-- None -> tell user to run spitball first
+- None -> tell user to run bullpen first
 
 ## Configuration
 
-`lineup` reads spitball's merged config (`~/.spitball.json` overlaid by
-`<repoRoot>/.spitball.json`) for shared values: `saveDir`, `commitAtBat`,
+`lineup` reads bullpen's merged config (`~/.bullpen.json` overlaid by
+`<repoRoot>/.bullpen.json`) for shared values: `saveDir`, `commitAtBat`,
 `autoContinue`, and `nestUnderRepoName`. It does not introduce its own
 config file. The legacy `autoCommit` key is honored as a fallback for
-`commitSpitball` only - the per-at-bat commit behavior is now
+`commitBullpen` only - the per-at-bat commit behavior is now
 controlled separately by `commitAtBat` so each at-bat lands as a single
 revertable commit. If `nestUnderRepoName: true`, lineup discovery scans only
 `<saveDir>/<repo-name>/`, so working in repo X only surfaces X's
-spitballs even when the saveDir is shared across repos. See the spitball
+bullpens even when the saveDir is shared across repos. See the bullpen
 plugin's `configuration.md` for the full schema. If a lineup-specific
 knob is needed later, it'll be added then.
 
 ## Layout invariant
 
-Every `lineup.md` is a sibling of a `spitball.md` in the same folder. The
+Every `lineup.md` is a sibling of a `bullpen.md` in the same folder. The
 pair travels together. `lineup` will not create a lineup file in a folder
-that doesn't already contain `spitball.md`.
+that doesn't already contain `bullpen.md`.

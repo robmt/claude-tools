@@ -6,7 +6,7 @@ deploy went bad) and the user wants to capture cause and prevention.
 ```markdown
 # Postmortem: <topic>
 
-Spitball: spitball.md
+Bullpen: bullpen.md
 Date: YYYY-MM-DD
 Mode: failure
 
@@ -18,7 +18,7 @@ Mode: failure
 
 ## Underlying cause
 <the upstream decision or assumption that made the proximate cause
-possible - often: the spitball was wrong, or an at-bat skipped a step,
+possible - often: the bullpen was wrong, or an at-bat skipped a step,
 or scope crept>
 
 ## Detection
@@ -26,7 +26,7 @@ or scope crept>
 only after the fact>
 
 ## Prevention
-<one concrete change to the spitball, the lineup bootstrap, or the
+<one concrete change to the bullpen, the lineup bootstrap, or the
 at-bat template that would catch this earlier next time. Resist a
 list - one suggestion>
 ```
