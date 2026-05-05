@@ -136,6 +136,12 @@ mockups, or companion-plugin artifacts (for example, the `lineup` plugin
 writes `lineup.md` and at-bat files inside this same folder). Layout
 inside each spitball folder is not configurable in this version.
 
+When the lineup plugin marks a spitball `Status: Complete`, it moves
+the entire folder into `<effectiveSaveDir>/completed/<folder>/` so the
+top-level `effectiveSaveDir` only shows in-flight work. The archive
+bucket is flat (no nesting by year or topic) and is reserved - do not
+name a spitball `completed`. Postmortem operates on archived folders.
+
 ## Continuation
 
 Spitball itself never auto-invokes a downstream skill: after the spitball is

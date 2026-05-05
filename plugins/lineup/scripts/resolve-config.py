@@ -112,6 +112,84 @@ def repo_name(root: Path):
     return f"{parts[-2]}-{parts[-1]}"
 
 
+def _spitball_entry(path: Path):
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        mtime = 0
+    return {"name": path.name, "path": str(path), "mtime": mtime}
+
+
+def _safe_iterdir(path: Path):
+    try:
+        return list(path.iterdir())
+    except OSError:
+        return []
+
+
+def _is_complete(folder: Path):
+    lineup_md = folder / "lineup.md"
+    if not lineup_md.exists():
+        return None
+    try:
+        head = lineup_md.read_text(errors="replace").lstrip()
+    except OSError:
+        return None
+    return head.startswith("Status: Complete")
+
+
+def scan_spitballs(effective):
+    """Walk effectiveSaveDir for live and completed spitball folders.
+
+    Live: top-level folders with spitball.md whose lineup.md does not
+    start with Status: Complete (or has no lineup.md yet).
+
+    Completed:
+    - folders inside <effective>/completed/ that contain spitball.md
+      (the archived layout written by lineup on completion), AND
+    - top-level folders whose lineup.md starts with Status: Complete
+      (legacy, pre-archival layout - included so postmortem can still
+      find them).
+
+    Returns (live, completed, lineup_active). Both lists sorted by
+    mtime descending. lineup_active is True iff at least one live
+    folder has a lineup.md.
+    """
+    live, completed = [], []
+    lineup_active = False
+
+    eff = Path(effective)
+    if not eff.is_dir():
+        return live, completed, lineup_active
+
+    for child in _safe_iterdir(eff):
+        if not child.is_dir():
+            continue
+        # The archive bucket: a top-level "completed" dir without its
+        # own spitball.md. Recurse one level for archived spitballs.
+        if child.name == "completed" and not (child / "spitball.md").exists():
+            for grandchild in _safe_iterdir(child):
+                if not grandchild.is_dir():
+                    continue
+                if not (grandchild / "spitball.md").exists():
+                    continue
+                completed.append(_spitball_entry(grandchild))
+            continue
+        if not (child / "spitball.md").exists():
+            continue
+        complete = _is_complete(child)
+        if complete is True:
+            completed.append(_spitball_entry(child))
+        else:
+            if complete is False:
+                lineup_active = True
+            live.append(_spitball_entry(child))
+
+    live.sort(key=lambda e: e["mtime"], reverse=True)
+    completed.sort(key=lambda e: e["mtime"], reverse=True)
+    return live, completed, lineup_active
+
+
 def main():
     root = repo_root()
 
@@ -140,38 +218,7 @@ def main():
         rname = repo_name(root)
         effective = os.path.join(save_dir, rname)
 
-    lineup_active = False
-    live_spitballs = []
-    try:
-        eff = Path(effective)
-        if eff.is_dir():
-            candidates = []
-            for child in eff.iterdir():
-                if not child.is_dir():
-                    continue
-                if not (child / "spitball.md").exists():
-                    continue
-                lineup_md = child / "lineup.md"
-                if lineup_md.exists():
-                    try:
-                        head = lineup_md.read_text(errors="replace").lstrip()
-                        if head.startswith("Status: Complete"):
-                            continue
-                    except OSError:
-                        pass
-                    lineup_active = True
-                try:
-                    mtime = child.stat().st_mtime
-                except OSError:
-                    mtime = 0
-                candidates.append((mtime, child))
-            candidates.sort(key=lambda t: t[0], reverse=True)
-            live_spitballs = [
-                {"name": c.name, "path": str(c), "mtime": m}
-                for m, c in candidates
-            ]
-    except OSError:
-        pass
+    live_spitballs, completed_spitballs, lineup_active = scan_spitballs(effective)
 
     result = {
         "saveDir": save_dir,
@@ -184,6 +231,7 @@ def main():
         "repoRoot": str(root) if root else None,
         "lineupActive": lineup_active,
         "liveSpitballs": live_spitballs,
+        "completedSpitballs": completed_spitballs,
     }
     print(json.dumps(result, indent=2))
 

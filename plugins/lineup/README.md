@@ -38,15 +38,27 @@ Each spitball gets its own folder under `<saveDir>` (or
 `docs/spitballs/`). The lineup adds files inside that same folder:
 
 ```
-docs/spitballs/2026-04-29-foo/
+docs/spitballs/2026-04-29-foo/         # in flight
   spitball.md             # written by spitball
   lineup.md               # rolling state index (At Bat / On Deck / In the Hole)
   004-wire-cli-flag.md    # current at-bat (only the concrete one is a file)
-  completed/
+  completed/              # at-bat history (inside a spitball folder)
     001-bootstrap-loader.md
     002-add-yaml-parser.md
     003-validate-schema.md
+docs/spitballs/completed/              # archive bucket (sibling of live folders)
+  2026-03-14-bar/         # entire spitball folder, moved here on completion
+    spitball.md
+    lineup.md             # starts with `Status: Complete`
+    completed/            # at-bat history travels with the folder
+      001-...md
+    postmortem.md         # written later by /postmortem (optional)
 ```
+
+The `completed/` inside a spitball folder is at-bat history. The
+top-level `<saveDir>/completed/` is the archive bucket of finished
+spitballs. They share a name only because both mean "done at this
+level" - they are at different depths and never overlap.
 
 `lineup.md` is short - a pointer to the current at-bat file plus inline
 bullets for On Deck and In the Hole. Only the **At Bat** slot ever gets a
@@ -60,7 +72,9 @@ yet understand.
 Reads the spitball and current state, then:
 
 1. Checks the spitball's completion criteria. If met -> marks the lineup
-   `Status: Complete` and stops.
+   `Status: Complete`, moves the folder into `<saveDir>/completed/`,
+   and stops. The archive keeps live spitballs uncluttered for
+   directory previews (Obsidian, IDE trees) and `git status`.
 2. Otherwise: promotes On Deck -> At Bat (creates the next `NNN-<slug>.md`
    file with full structure including a required Test plan), promotes In
    the Hole -> On Deck, drafts a new In the Hole bullet.

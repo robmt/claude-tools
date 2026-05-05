@@ -54,6 +54,12 @@ Spitball: spitball.md
 That marker is how a lineup becomes inactive. There is no separate
 metadata file or json sidecar - the filesystem is the truth.
 
+When lineup writes `Status: Complete`, it also moves the entire
+spitball folder from `<effectiveSaveDir>/<folder>/` to
+`<effectiveSaveDir>/completed/<folder>/`. Past that point the folder
+lives in the archive bucket; postmortem and future reads find it
+there. See SKILL.md "Completion archive" for the move procedure.
+
 ## Counter rules
 
 - The counter is monotonic per lineup folder.

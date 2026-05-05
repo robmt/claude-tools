@@ -61,20 +61,23 @@ Create a task for each item and complete in order:
 
 1. **Resolve config.** Run
    `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` once. Parse
-   the JSON for `effectiveSaveDir`, `commitAtBat`, `repoRoot`, and
-   `liveSpitballs`. If exit code is non-zero, the cwd is not in a git
-   repo while `nestUnderRepoName: true` - refuse and tell the user.
+   the JSON for `effectiveSaveDir`, `commitAtBat`, `repoRoot`,
+   `liveSpitballs`, and `completedSpitballs`. If exit code is
+   non-zero, the cwd is not in a git repo while `nestUnderRepoName:
+   true` - refuse and tell the user.
 
 2. **Pick the target spitball.** Try chat-context inference first (same
    rules as lineup's discovery): exact slug or path, topic words
    matching a folder name, the most recent `/spitball` or `/lineup` or
    `/at-bat` invocation. If matched, announce and proceed.
 
-   Without a chat match, scan immediate children of `effectiveSaveDir`
-   for folders that contain `spitball.md`. Two candidate sets:
-   - **Completed**: folders whose `lineup.md` starts with
-     `Status: Complete`.
-   - **Live**: folders whose `lineup.md` does not start with
+   Without a chat match, use the two pre-computed lists from step 1:
+   - **Completed**: `completedSpitballs` - folders inside
+     `<effectiveSaveDir>/completed/` (archived by lineup on
+     completion), plus any legacy top-level folders whose `lineup.md`
+     starts with `Status: Complete` that haven't been moved yet.
+   - **Live**: `liveSpitballs` - folders at the top level of
+     `<effectiveSaveDir>` whose `lineup.md` does not start with
      `Status: Complete` (or has no `lineup.md`).
 
    Default rules:
@@ -233,6 +236,11 @@ Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the
 merged config. Postmortem uses these fields:
 
 - `effectiveSaveDir` - directory to scan for spitball folders.
+- `liveSpitballs` - top-level non-complete folders (mid-flight
+  reflection or rare in-progress postmortems).
+- `completedSpitballs` - folders in the archive bucket
+  (`<effectiveSaveDir>/completed/`) plus any legacy top-level
+  completed folders. The default postmortem target.
 - `commitAtBat` - whether to commit the postmortem.md after writing
   (postmortem lives in the at-bat-history side of the folder, so it
   rides the at-bat commit flag, not the spitball-doc flag).

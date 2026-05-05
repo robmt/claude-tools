@@ -1,10 +1,11 @@
-"""Tests for repo_name() in resolve-config.py.
+"""Tests for resolve-config.py.
 
 Run: python3 plugins/spitball/scripts/test_resolve_config.py
 """
 
 import importlib.util
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -114,6 +115,100 @@ class ApplyLayerTests(unittest.TestCase):
         rc.apply_layer(cfg, {"commitAtBat": False})
         rc.apply_layer(cfg, {"commitAtBat": True})
         self.assertTrue(cfg["commitAtBat"])
+
+
+class ScanSpitballsTests(unittest.TestCase):
+    """Filesystem layout tests for scan_spitballs()."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _make_spitball(self, path, lineup_status=None):
+        path.mkdir(parents=True)
+        (path / "spitball.md").write_text("# spitball\n")
+        if lineup_status is not None:
+            head = "Status: Complete\n\n" if lineup_status == "complete" else ""
+            (path / "lineup.md").write_text(head + "# Lineup\n")
+
+    def test_missing_dir_returns_empty(self):
+        live, done, active = rc.scan_spitballs(str(self.root / "nope"))
+        self.assertEqual(live, [])
+        self.assertEqual(done, [])
+        self.assertFalse(active)
+
+    def test_live_folder_with_lineup_marks_active(self):
+        self._make_spitball(self.root / "2026-05-01-foo", lineup_status="active")
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual([e["name"] for e in live], ["2026-05-01-foo"])
+        self.assertEqual(done, [])
+        self.assertTrue(active)
+
+    def test_live_folder_without_lineup_not_active(self):
+        # Spitball written, lineup not yet bootstrapped.
+        self._make_spitball(self.root / "2026-05-01-foo", lineup_status=None)
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual([e["name"] for e in live], ["2026-05-01-foo"])
+        self.assertEqual(done, [])
+        self.assertFalse(active)
+
+    def test_archive_bucket_lists_completed(self):
+        self._make_spitball(
+            self.root / "completed" / "2026-04-01-old", lineup_status="complete"
+        )
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual(live, [])
+        self.assertEqual([e["name"] for e in done], ["2026-04-01-old"])
+        self.assertFalse(active)
+
+    def test_legacy_top_level_complete_classified_as_done(self):
+        # Pre-archival layout: complete spitball still at top level.
+        self._make_spitball(
+            self.root / "2026-03-01-legacy", lineup_status="complete"
+        )
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual(live, [])
+        self.assertEqual([e["name"] for e in done], ["2026-03-01-legacy"])
+        self.assertFalse(active)
+
+    def test_mixed_layout(self):
+        self._make_spitball(self.root / "2026-05-01-live", lineup_status="active")
+        self._make_spitball(
+            self.root / "2026-04-15-legacy", lineup_status="complete"
+        )
+        self._make_spitball(
+            self.root / "completed" / "2026-04-01-archived",
+            lineup_status="complete",
+        )
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual([e["name"] for e in live], ["2026-05-01-live"])
+        self.assertEqual(
+            sorted(e["name"] for e in done),
+            ["2026-04-01-archived", "2026-04-15-legacy"],
+        )
+        self.assertTrue(active)
+
+    def test_completed_named_spitball_at_top_level_is_treated_as_archive(self):
+        # Edge case: bucket detection wins when "completed" has no spitball.md
+        # of its own. Real spitballs should never be named "completed".
+        (self.root / "completed").mkdir()
+        # No spitball.md inside, no children -> empty completed list, no live.
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual(live, [])
+        self.assertEqual(done, [])
+        self.assertFalse(active)
+
+    def test_completed_folder_with_its_own_spitball_is_treated_as_spitball(self):
+        # If someone literally names a spitball "completed" (with spitball.md
+        # directly inside), respect that and don't recurse.
+        self._make_spitball(self.root / "completed", lineup_status="active")
+        live, done, active = rc.scan_spitballs(str(self.root))
+        self.assertEqual([e["name"] for e in live], ["completed"])
+        self.assertEqual(done, [])
+        self.assertTrue(active)
 
 
 if __name__ == "__main__":

@@ -15,12 +15,16 @@ that is `at-bat`.
 This skill never writes code and never plans more than one new In the
 Hole bullet per cycle. When invoked at the end of an at-bat run, it
 MUST verify the just-completed at-bat's Definition of done before
-promoting (see "Verification mode" below). It MAY invoke `at-bat` at
-the end of the hand-back, and only when the user has opted in via
-`autoContinue` (`"always"`, `"session"` for this conversation, or
-`"yes"` at the per-handoff prompt). It NEVER invokes any other
-implementation skill. The user always drives the loop - `autoContinue`
-is a shortcut for typing the next command, not a license to chain.
+promoting (see "Verification mode" below). When the spitball's
+completion criteria are met, lineup MAY move the entire spitball
+folder into `<effectiveSaveDir>/completed/<folder>/` as part of
+marking `Status: Complete` (see "Completion archive" below) - this is
+the only move it performs. It MAY invoke `at-bat` at the end of the
+hand-back, and only when the user has opted in via `autoContinue`
+(`"always"`, `"session"` for this conversation, or `"yes"` at the
+per-handoff prompt). It NEVER invokes any other implementation skill.
+The user always drives the loop - `autoContinue` is a shortcut for
+typing the next command, not a license to chain.
 </HARD-GATE>
 
 ## Output rule: ASCII only
@@ -88,8 +92,11 @@ Create a task for each item and complete in order:
    turn), skip this step - the user is asserting prior state is correct.
 6. **Check completion.** Compare current state (codebase, recent
    commits, completed at-bats) against the spitball's completion
-   criteria. If met -> write `Status: Complete` at the top of `lineup.md`
-   and stop. Tell the user the spitball is delivered.
+   criteria. If met -> write `Status: Complete` at the top of
+   `lineup.md`, archive the folder (see "Completion archive" below),
+   then skip ahead to step 9 (commit) and step 10 (hand-back). Steps
+   7-8 (promotion) are not run on completion. Tell the user where the
+   folder was moved as part of the hand-back.
 7. **Promote.** Otherwise:
    - Promote On Deck -> At Bat. Create the next `NNN-<slug>.md` file in
      the lineup folder with the full required structure (see the
@@ -105,6 +112,8 @@ Create a task for each item and complete in order:
    file and the updated `lineup.md` together with a short message like
    `Lineup: promote NNN-<slug>`. The lineup file lives alongside the
    at-bat work in the loop's commit history, so it shares the same flag.
+   On completion (step 6), the commit also captures the folder move into
+   `completed/`; use a message like `Lineup: <topic> complete (archived)`.
 10. **Hand back to user.** End your message with a hand-back block in
    EXACTLY this shape so the call-to-action is impossible to miss:
 
@@ -121,8 +130,11 @@ Create a task for each item and complete in order:
 
    On first-run bootstrap, replace the header with `## Lineup bootstrapped`
    and the summary with the three slots you just filled. On completion,
-   replace the block with a `## Spitball delivered` header and skip the
-   Next step line - the loop is over.
+   replace the block with a `## Spitball delivered` header, list the new
+   archive path (`Archived to <effectiveSaveDir>/completed/<folder>/`),
+   and replace the Next-step line with a single passive pointer:
+   `Optional: run /postmortem to reflect.` The loop is over - do not
+   prompt or auto-continue.
 
    The `---` rule and bold **Next step:** line are required - they are
    the visual anchor that tells the user the loop is paused waiting for
@@ -215,6 +227,38 @@ verification"), run these checks before promoting:
 When invoked directly by the user (no at-bat hand-back in the prior
 turn), skip verification - the user is asserting the prior state.
 
+## Completion archive
+
+When step 6 detects the spitball's completion criteria are met,
+lineup writes `Status: Complete` at the top of `lineup.md` AND moves
+the spitball folder out of the live area so the file tree (and
+Obsidian / IDE previews) stays focused on in-flight work.
+
+Procedure:
+
+1. **Update `lineup.md` in place** at the current location, prepending
+   `Status: Complete` per the lineup template's "Completed lineup"
+   section. Do this before the move so the move is a clean rename.
+2. **Ensure the archive bucket exists.** If
+   `<effectiveSaveDir>/completed/` is missing, create it. The bucket
+   is a flat directory of completed spitball folders; do not nest by
+   year or topic.
+3. **Move the folder.** Rename
+   `<effectiveSaveDir>/<folder>/` to
+   `<effectiveSaveDir>/completed/<folder>/`. If `commitAtBat` is true,
+   use `git mv` so history follows. If false, use a plain rename.
+4. **Refuse on collision.** If
+   `<effectiveSaveDir>/completed/<folder>/` already exists, stop and
+   tell the user; do not overwrite. Manual resolution required.
+5. **Commit (if `commitAtBat` is true)** with a message like
+   `Lineup: <topic> complete (archived)`. The commit captures both
+   the `Status: Complete` edit and the rename.
+
+The archive bucket is reserved: spitballs must not be named
+`completed`. The resolve-config scan treats a top-level `completed/`
+folder without its own `spitball.md` as the bucket and walks one level
+down for archived folders.
+
 ## Templates
 
 When creating files, copy from the template sidecars:
@@ -243,7 +287,6 @@ digraph lineup {
     "lineup.md exists?" [shape=diamond];
     "First-run bootstrap" [shape=box];
     "Completion met?" [shape=diamond];
-    "Mark Status: Complete\nand stop" [shape=doublecircle];
     "Promote slots" [shape=box];
     "Update lineup.md" [shape=box];
     "Commit if commitAtBat" [shape=box];
@@ -260,7 +303,9 @@ digraph lineup {
     "lineup.md exists?" -> "First-run bootstrap" [label="no"];
     "lineup.md exists?" -> "Completion met?" [label="yes"];
     "First-run bootstrap" -> "Commit if commitAtBat";
-    "Completion met?" -> "Mark Status: Complete\nand stop" [label="yes"];
+    "Mark Status: Complete\nand archive folder" [shape=box];
+    "Completion met?" -> "Mark Status: Complete\nand archive folder" [label="yes"];
+    "Mark Status: Complete\nand archive folder" -> "Commit if commitAtBat";
     "Completion met?" -> "Promote slots" [label="no"];
     "Promote slots" -> "Update lineup.md";
     "Update lineup.md" -> "Commit if commitAtBat";
