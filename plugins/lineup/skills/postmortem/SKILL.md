@@ -99,7 +99,12 @@ Create a task for each item and complete in order:
    - `bullpen.md` - the design and completion criteria.
    - `lineup.md` - current state (or final state if completed).
    - All `NNN-*.md` files in `completed/` and at the folder root - the
-     executed at-bats.
+     executed at-bats. Pay particular attention to each at-bat's
+     `## Notes` section if present - that's where in-flight surprises,
+     stop-triggers, user redirections, and `(bullpen-level)` signals
+     were captured during the loop. Those notes are usually the most
+     concentrated source of postmortem material, since chat context
+     gets cleared between sessions but Notes survive.
    - Optional: `git log --oneline` for commits touching this folder
      (`git log -- <effectiveSaveDir>/<folder>/`) and commits in the
      `repoRoot` from the bullpen's start date forward, scoped to paths

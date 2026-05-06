@@ -26,6 +26,12 @@ at-bat.
 
 ## Dependencies
 - <prior at-bat or external thing>
+
+## Notes
+<freeform appends, written during or after the at-bat. Surprises,
+course corrections, scope leaks caught, why the obvious approach
+didn't work, anything postmortem-future-you will wish you'd kept.
+Leave empty if nothing was surprising. One-liners beat paragraphs.>
 ```
 
 Red and Green should be the same command - only the expected outcome

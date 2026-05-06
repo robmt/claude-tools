@@ -232,14 +232,22 @@ Create a task for each item and complete in order:
    snippets, or the proposed-runnable-procedure if deferred) under a
    `## Verification` header at the bottom of the at-bat file. Kill any
    background processes you started.
-10. **Move file to `completed/`.** Use `git mv` so history is preserved.
+10. **Append to `## Notes` (if surprising).** Before moving the file,
+    add freeform one-liners to the at-bat's `## Notes` section if
+    anything happened that postmortem-future-you would want to know:
+    a stop-trigger fired (mid-Green Out edit, scope leak revert,
+    eyes-open no-test consent), the obvious approach didn't work and
+    why, the user redirected shape mid-flight, sizing felt off. Skip
+    if nothing was surprising - empty is honest, ritual logging is
+    not. The section already exists in the template; just append.
+11. **Move file to `completed/`.** Use `git mv` so history is preserved.
     The filename does not change; only its location.
-11. **Commit if `commitAtBat` is true** (default). One commit covering
+12. **Commit if `commitAtBat` is true** (default). One commit covering
     the implementation, the test, and the file move. Suggested message:
     `At-bat NNN: <slug>`. The single-commit boundary matters: each
     at-bat should be revertable as one unit, so do not split this into
     multiple commits or fold it into an unrelated commit.
-12. **Hand off to lineup for verification.** End your at-bat output
+13. **Hand off to lineup for verification.** End your at-bat output
     with a short status block in EXACTLY this shape:
 
     ```
