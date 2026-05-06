@@ -125,7 +125,10 @@ Create a task for each item and complete in order:
        is the failure mode this gate exists to prevent.
 
 6. **Delegate implementation to a fresh subagent.** Spawn ONE new
-   `general-purpose` subagent (via the Agent tool) per at-bat. Never
+  subagent (via the Agent tool) per at-bat. Prefer Sonnet for this
+  implementation subagent. If explicit model selection is unavailable
+  in the current tool surface, use a fresh `general-purpose` subagent.
+  Never
    reuse, never spawn more than one in the happy path. Read
    `${CLAUDE_PLUGIN_ROOT}/skills/at-bat/templates/subagent-prompt.md`
    only at this step (not before - it is sidecar). Build the prompt
@@ -250,10 +253,11 @@ There is no `.lineup.json`. Lineup and at-bat share bullpen's config.
 
 - **One at-bat at a time.** This skill operates on the At Bat slot
   only. On Deck and In the Hole are not your business.
-- **Implementation runs in a fresh subagent.** One per at-bat. The main
-  agent owns gates, diff sanity, file move, commit, and hand-off; the
-  subagent owns Red/Green/scope/manual-verify. Implementation rules
-  live in the sidecar at `templates/subagent-prompt.md`.
+- **Implementation runs in a fresh subagent.** One per at-bat,
+  preferring Sonnet when available. The main agent owns gates, diff
+  sanity, file move, commit, and hand-off; the subagent owns
+  Red/Green/scope/manual-verify. Implementation rules live in the
+  sidecar at `templates/subagent-prompt.md`.
 - **Scope boundary is law.** The diff sanity check is the main agent's
   enforcement; the subagent's `scope_status` is a self-report and the
   diff overrules it.

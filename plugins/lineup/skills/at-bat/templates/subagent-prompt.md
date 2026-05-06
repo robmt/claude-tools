@@ -1,17 +1,20 @@
 # Subagent prompt template (at-bat implementation)
 
 The main `at-bat` agent loads this file at step 6 and uses its body as
-the prompt for the fresh general-purpose subagent that does Red, Green,
-scope-boundary verification, and manual verification. The main agent
-does NOT execute this file's instructions itself.
+the prompt for a fresh implementation subagent that does Red, Green,
+scope-boundary verification, and manual verification. Prefer Sonnet
+for this subagent when available. If explicit model selection is not
+available in the current tool surface, use a fresh `general-purpose`
+subagent. The main agent does NOT execute this file's instructions
+itself.
 
 ## How the main agent uses this file
 
 1. Read this file.
 2. Build a brief with the at-bat-specific context (the four `<...>`
    placeholders below) and prepend it to the body.
-3. Pass the combined text to the Agent tool with
-   `subagent_type: general-purpose`.
+3. Pass the combined text to the Agent tool. Prefer Sonnet when model
+  selection is available; otherwise use `subagent_type: general-purpose`.
 
 Brief shape:
 
