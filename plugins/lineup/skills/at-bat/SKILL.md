@@ -12,7 +12,13 @@ the work. The two are deliberately separate so the user drives the loop.
 <HARD-GATE>
 This skill operates ONLY on the current At Bat file. It does not read
 On Deck, In the Hole, or any future slot. It does not modify the lineup
-state. It does not promote slots. When done, it MUST invoke `lineup` -
+state. It does not promote slots. The implementation phase (Red, Green,
+scope verification, manual verification) MUST be delegated to a fresh
+general-purpose subagent - one per at-bat - so the main session's
+context stays clean across a long lineup. The user-interaction gates
+(testability gate, mid-Green scope-expansion surfacing) and the file
+move / commit / lineup hand-off remain in the main agent. When the
+implementation is verified, the main agent MUST invoke `lineup` -
 this handoff is mandatory and not user-configurable. Lineup is the
 verifier of at-bat's self-reported completion; bypassing it lets a
 broken at-bat ship as "done." It NEVER invokes any other implementation
@@ -23,82 +29,30 @@ skill.
 
 All files this skill writes (test files, code edits, commit messages, the hand-off block) MUST use ASCII characters only. No emoji, no em-dashes, no curly quotes, no arrows, no non-breaking spaces. Use `-` for dashes, `->` for arrows, `"` and `'` for quotes, `...` for ellipses. This keeps content portable across editors, terminals, and operating systems.
 
-## TDD discipline (rigid)
+## Where the implementation rules live
 
-This skill is a rigid TDD skill. Red -> Green is not negotiable when the
-at-bat has a Test plan section.
+Red, Green, scope-boundary policing, the mid-Green stop trigger, the
+"default to executing" rules, and the implementation-phase anti-patterns
+all govern the subagent and live in
+`${CLAUDE_PLUGIN_ROOT}/skills/at-bat/templates/subagent-prompt.md`. The
+main agent reads that file at step 6 and passes its body to the
+subagent verbatim - do NOT inline those rules here, and do NOT execute
+them yourself. They are sidecar to keep this SKILL.md focused on the
+main-agent-only flow.
 
-1. **Red first.** Write the failing test BEFORE implementation. Run it.
-   Confirm it fails for the right reason (the new behavior is missing,
-   not a syntax error).
-2. **Green second.** Implement the smallest change that makes the test
-   pass.
-3. **No gold-plating.** Do not refactor, clean up, or add features past
-   the at-bat's Definition of done. Anything outside scope goes back to
-   the lineup as a future bullet - not into this at-bat.
+## Main-agent anti-patterns
 
-**Red and Green should be the same command.** The only thing that
-changes between them is the expected outcome. `dotnet test X` exits 1
-before, exits 0 after. `curl http://localhost:5000/foo` returns 404
-before, 200 after. `grep -q PATTERN file` returns 1 before, 0 after.
-If you find yourself writing "Red: project doesn't exist" or "Red:
-visual inspection," that is a sign the test is not yet a test - it's
-an absence or a vibe. Reshape into a runnable command whose exit
-code or output flips between Red and Green, or use the no-automated-
-test escape and write a runnable manual procedure (see step 8).
-
-If the at-bat's Test plan section says "No automated test", run the
-manual verification steps yourself before deferring to the user. Do NOT
-skip verification just because there's no automated test, and do NOT
-default to "deferred to you" when you have the tools to run it.
-
-**Default to executing.** Anything you can run from a shell counts as
-executable, not manual:
-- Starting a backend or dev server (background process is fine).
-- `curl` against a URL, parsing the response.
-- Running `dotnet test`, `pnpm test`, `npm run build`, etc.
-- Grep / file-existence / build-output checks.
-- Headless browser via `chrome-devtools` MCP if available.
-
-Only defer to the user when the verification truly requires a human:
-visual layout judgment that needs eyes on the screen, interactive UX
-flows that headless tools can't drive, hardware-in-the-loop steps. When
-deferring, name the specific reason ("requires visual inspection of the
-new icon's alignment") instead of a generic "browser smoke test."
-
-If you launch a background process for verification, kill it before
-moving on - don't leave dev servers running.
-
-## Anti-patterns
-
-- **"While I'm here, let me also fix..."** No. The at-bat's Scope
-  boundary section names what's Out. Respect it. If you find a real
-  problem outside scope, surface it to the user and let them decide
-  whether to add it to the lineup as a future at-bat.
-- **"The at-bat's intent requires this Out change."** No. If you are
-  constructing that sentence, you are in the failure mode this rule
-  exists to block. Every scope expansion has a plausible
-  justification - "the test plan implicitly needs it," "the Page-side
-  bug is real," "it's a small bounded change." None of them give you
-  permission to edit an Out file. The fact that the test plan can't
-  go Red->Green without touching Out files is a doc-flaw signal: the
-  at-bat itself is wrong. Stop and surface (see step 7's mid-Green
-  stop trigger). Documenting the expansion after the fact in the
-  `## Verification` section is not a substitute for asking - it is
-  the audit trail of a violation.
-- **"This test is hard to write, I'll skip it."** No. If the test is
-  hard, that is a signal the design is unclear. Stop and re-read the
-  at-bat. If the at-bat is genuinely untestable but the Test plan
-  section claims red/green, push back to the user - the reviewer should
-  have caught this.
-- **"Browser smoke test deferred to you."** No, not by default. If the
-  verification is "curl a URL and check the response," "load the build
-  output and confirm the chunk emitted," or anything else a shell can
-  do, run it yourself. Defer only when the step truly needs human eyes,
-  and say *which* part needs them.
 - **"I'll just refresh the lineup at the end."** No. This skill always
   hands off to lineup at the end (mandatory verification). It just does
   not perform the lineup's own promote logic itself.
+- **"I'll just run Red/Green in the main session."** No. The
+  implementation phase belongs in a fresh subagent (one per at-bat).
+  If you (the main agent) reach for Edit or a test-running Bash
+  command after the testability gate has passed, you are doing the
+  subagent's job and bloating the main session's context. The only
+  reads/edits the main agent performs against code or tests are the
+  diff sanity check (`git status`, `git diff --stat`) and the final
+  `git mv` + commit.
 
 ## Checklist
 
@@ -170,47 +124,48 @@ Create a task for each item and complete in order:
        Discovering "oh, I can't actually verify this" mid-implementation
        is the failure mode this gate exists to prevent.
 
-6. **Red.** Run the chosen command. Confirm it fails for the expected
-   reason (the new behavior is missing, not a syntax error or wrong
-   path). If the at-bat is on the no-automated-test path with
-   eyes-open consent, skip Red and prepare the manual verification
-   procedure for step 9.
-7. **Green.** Implement the smallest change that makes the command
-   pass. Run it. Confirm the same command that was Red is now Green.
+6. **Delegate implementation to a fresh subagent.** Spawn ONE new
+   `general-purpose` subagent (via the Agent tool) per at-bat. Never
+   reuse, never spawn more than one in the happy path. Read
+   `${CLAUDE_PLUGIN_ROOT}/skills/at-bat/templates/subagent-prompt.md`
+   only at this step (not before - it is sidecar). Build the prompt
+   exactly as that file describes: a brief at the top with the at-bat
+   file content and absolute path, the worktree path (or "no worktree,
+   run from <repoRoot>"), and the testability-gate outcome from step 5;
+   then the body of the sidecar verbatim.
 
-   **Mid-Green stop trigger.** The moment you realize a file listed
-   Out in the Scope boundary must change for Red->Green, STOP. Do
-   not make the edit and document it later - that is the rationalized
-   path the anti-pattern names. Surface to the user with the
-   ambiguity laid out:
+   The subagent does NOT run `git mv`, does NOT commit, and does NOT
+   invoke lineup. Those are the main agent's job in steps 8-10.
+7. **Process the subagent's report.** The report shape is defined in
+   the sidecar; expect a fixed block with `status`, `red_command`,
+   `green_command`, `files_touched`, `scope_status`,
+   `manual_verification`, and `notes`.
+   - `status: ok` and `scope_status: clean` -> proceed to the diff
+     sanity check below, then step 8.
+   - `status: scope_expansion_needed` -> the mid-Green stop trigger
+     fired inside the subagent. Surface to the user with the
+     ambiguity laid out:
 
-   > "Going from Red to Green requires changes to `<file>`, which the
-   > Scope boundary lists Out. The at-bat's test plan implicitly
-   > needs Out work - the doc is wrong. Two ways forward: (a) split,
-   > leave this at-bat test-only with the assertions weakened or
-   > deferred and file a precursor at-bat for the Out work, or (b)
-   > expand this at-bat's Scope boundary explicitly to include
-   > `<file>`. Which?"
+     > "Going from Red to Green requires changes to `<file>`, which
+     > the Scope boundary lists Out. The at-bat's test plan
+     > implicitly needs Out work - the doc is wrong. Two ways
+     > forward: (a) split, leave this at-bat test-only with the
+     > assertions weakened or deferred and file a precursor at-bat
+     > for the Out work, or (b) expand this at-bat's Scope boundary
+     > explicitly to include `<file>`. Which?"
 
-   Wait for the user to pick. Do NOT proceed past Red until they do.
-   If you have already started editing Out files when you notice,
-   revert those edits before surfacing - the discussion should be
-   about the right shape, not about ratifying work already done.
-8. **Verify scope boundary.** Re-read the Scope boundary section.
-   Confirm your changes are entirely In, nothing Out. If you touched
-   anything Out, revert it AND surface it to the user as a candidate
-   for a future at-bat. Documenting the Out edit in the
-   `## Verification` section is not a substitute for the revert -
-   the revert is the action, the surfacing is the conversation. If
-   you cannot revert without losing Red->Green, that is the mid-Green
-   stop trigger from step 7 firing late: stop, surface, and let the
-   user choose split vs. expand.
-9. **Manual verification (if applicable).** If the at-bat used the
-   no-automated-test escape, EXECUTE the manual steps yourself first.
-   Anything shell-runnable counts as executable: launch a backend in
-   the background, `curl` the URL, parse the response, run a build,
-   inspect the output. See the "Default to executing" rules above the
-   checklist.
+     Wait for the user to pick. On `expand`, edit the at-bat file's
+     Scope boundary to move the file from Out to In, then re-spawn a
+     fresh subagent with the updated at-bat content. (This is the one
+     place the "one subagent per at-bat" rule allows a second spawn -
+     the prior run was a bounced attempt, not a completed
+     implementation.) On `split`, surface the precursor at-bat to the
+     user as a candidate for the lineup and stop; do not move the
+     file, do not commit, do not hand off.
+   - Any other failure status (`red_did_not_fail`, `green_failed`,
+     `manual_verification_failed`) -> stop and report the subagent's
+     notes to the user. Do not move the file, do not commit, do not
+     hand off. The user fixes the at-bat (or the code) and re-invokes.
 
    **Use the same command shape as Red and Green when possible.** If
    Red was "with backend down, `curl /foo` returns connection refused"
@@ -232,7 +187,13 @@ Create a task for each item and complete in order:
    snippets, or the proposed-runnable-procedure if deferred) under a
    `## Verification` header at the bottom of the at-bat file. Kill any
    background processes you started.
-10. **Append to `## Notes` (if surprising).** Before moving the file,
+8. **Diff sanity check.** Run `git status` and `git diff --stat` from
+   the worktree (or `repoRoot` if no worktree). If files outside the
+   Scope boundary's In list appear in the diff, treat it as
+   `scope_expansion_needed` regardless of what the subagent reported -
+   the diff is authoritative, the report is a self-assessment. Surface
+   to the user with the same wording as above.
+9. **Append to `## Notes` (if surprising).** Before moving the file,
     add freeform one-liners to the at-bat's `## Notes` section if
     anything happened that postmortem-future-you would want to know:
     a stop-trigger fired (mid-Green Out edit, scope leak revert,
@@ -240,14 +201,14 @@ Create a task for each item and complete in order:
     why, the user redirected shape mid-flight, sizing felt off. Skip
     if nothing was surprising - empty is honest, ritual logging is
     not. The section already exists in the template; just append.
-11. **Move file to `completed/`.** Use `git mv` so history is preserved.
+10. **Move file to `completed/`.** Use `git mv` so history is preserved.
     The filename does not change; only its location.
-12. **Commit if `commitAtBat` is true** (default). One commit covering
+11. **Commit if `commitAtBat` is true** (default). One commit covering
     the implementation, the test, and the file move. Suggested message:
     `At-bat NNN: <slug>`. The single-commit boundary matters: each
     at-bat should be revertable as one unit, so do not split this into
     multiple commits or fold it into an unrelated commit.
-13. **Hand off to lineup for verification.** End your at-bat output
+12. **Hand off to lineup for verification.** End your at-bat output
     with a short status block in EXACTLY this shape:
 
     ```
@@ -268,19 +229,6 @@ Create a task for each item and complete in order:
     NOT add a "Next step" line; lineup owns the user-facing
     call-to-action from here on.
 
-## Scope verification
-
-Before committing, ask yourself:
-
-- Did I touch any files not justified by the at-bat's What and
-  Definition of done?
-- Did I add behavior beyond what the test requires?
-- Did I refactor unrelated code "while I was there"?
-
-If yes to any, revert those changes. They are not part of this at-bat.
-If they're worth doing, surface them to the user - the reviewer can add
-them as future bullets.
-
 ## Process Flow
 
 ```dot
@@ -293,15 +241,17 @@ digraph atbat {
     "Stop, report missing dep" [shape=doublecircle];
     "Testability gate" [shape=diamond];
     "Stop, ask user to choose" [shape=doublecircle];
-    "Red: run command" [shape=box];
-    "Confirm Red fails" [shape=box];
-    "Green: implement, re-run" [shape=box];
-    "Same command Greens?" [shape=diamond];
-    "Iterate implementation" [shape=box];
-    "Verify scope boundary" [shape=box];
-    "Manual verification" [shape=box];
+    "Spawn fresh subagent" [shape=box];
+    "Subagent: Red, Green, scope, manual" [shape=box];
+    "Process subagent report" [shape=diamond];
+    "Surface scope expansion to user" [shape=box];
+    "User picks?" [shape=diamond];
+    "Stop, surface precursor at-bat" [shape=doublecircle];
+    "Stop, report failure" [shape=doublecircle];
+    "Diff sanity check" [shape=diamond];
     "git mv to completed/" [shape=box];
     "Commit if commitAtBat" [shape=box];
+    "Hand off to lineup" [shape=doublecircle];
 
     "Discover active lineup" -> "Has At Bat pointer?";
     "Has At Bat pointer?" -> "Tell user to run lineup" [label="no"];
@@ -310,20 +260,19 @@ digraph atbat {
     "Dependencies met?" -> "Stop, report missing dep" [label="no"];
     "Dependencies met?" -> "Testability gate" [label="yes"];
     "Testability gate" -> "Stop, ask user to choose" [label="needs human eyes\n(no consent yet)"];
-    "Testability gate" -> "Red: run command" [label="executable"];
-    "Testability gate" -> "Green: implement, re-run" [label="no-test consent"];
-    "Red: write failing test" -> "Confirm test fails";
-    "Red: run command" -> "Confirm Red fails";
-    "Confirm Red fails" -> "Green: implement, re-run";
-    "Green: implement, re-run" -> "Same command Greens?";
-    "Same command Greens?" -> "Iterate implementation" [label="no"];
-    "Iterate implementation" -> "Same command Greens?";
-    "Same command Greens?" -> "Verify scope boundary" [label="yes"];
-    "Verify scope boundary" -> "Manual verification";
-    "Manual verification" -> "git mv to completed/";
+    "Testability gate" -> "Spawn fresh subagent" [label="executable\nor no-test consent"];
+    "Spawn fresh subagent" -> "Subagent: Red, Green, scope, manual";
+    "Subagent: Red, Green, scope, manual" -> "Process subagent report";
+    "Process subagent report" -> "Surface scope expansion to user" [label="scope_expansion_needed"];
+    "Process subagent report" -> "Stop, report failure" [label="other failure"];
+    "Process subagent report" -> "Diff sanity check" [label="ok"];
+    "Diff sanity check" -> "Surface scope expansion to user" [label="diff disagrees"];
+    "Diff sanity check" -> "git mv to completed/" [label="clean"];
+    "Surface scope expansion to user" -> "User picks?";
+    "User picks?" -> "Spawn fresh subagent" [label="expand:\nupdate boundary,\nre-spawn"];
+    "User picks?" -> "Stop, surface precursor at-bat" [label="split"];
     "git mv to completed/" -> "Commit if commitAtBat";
     "Commit if commitAtBat" -> "Hand off to lineup";
-    "Hand off to lineup" [shape=doublecircle];
 }
 ```
 
@@ -346,15 +295,17 @@ There is no `.lineup.json`. Lineup and at-bat share bullpen's config.
 
 ## Key principles
 
-- **Red before green.** Always. Confirm the test fails first.
-- **Smallest change to green.** Don't over-build.
-- **Scope boundary is law.** What's listed Out stays Out.
 - **One at-bat at a time.** This skill operates on the At Bat slot
   only. On Deck and In the Hole are not your business.
-- **Never auto-invoke lineup.** When the at-bat is complete, stop. The
-  user calls the next play.
-- **Honest verification.** If there's no automated test, the manual
-  steps must actually be run, not waved at.
+- **Implementation runs in a fresh subagent.** One per at-bat. The main
+  agent owns gates, diff sanity, file move, commit, and hand-off; the
+  subagent owns Red/Green/scope/manual-verify. Implementation rules
+  live in the sidecar at `templates/subagent-prompt.md`.
+- **Scope boundary is law.** The diff sanity check is the main agent's
+  enforcement; the subagent's `scope_status` is a self-report and the
+  diff overrules it.
+- **Always hand off to lineup.** Mandatory verification of the
+  at-bat's self-reported completion. Never bypass.
 - **Run inside the worktree if one is named.** If `lineup.md` starts
   with a `Worktree: <path>` header, `cd` into it in step 2 and stay
   there for every command and commit.
