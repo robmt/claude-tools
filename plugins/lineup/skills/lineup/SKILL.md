@@ -1,6 +1,6 @@
 ---
 name: lineup
-description: "Use this skill to review or refresh the rolling work state next to a bullpen. Trigger on phrases like 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the bullpen done', 'check completion', or whenever the user wants to advance the next-step view without doing implementation work. Also trigger when the user gives direction for the next at-bat ('the next at-bat should X', 'have the next at-bat do Y', 'make the next slot Z') - lineup is the place to shape what the next at-bat will be, not base Claude. Reads the bullpen + current state, promotes On Deck -> At Bat (creates an at-bat file), and stops. Never auto-invokes at-bat or any implementation skill."
+description: "Use this skill to review the rolling work state next to a bullpen and sharpen the next at-bat. Trigger on 'update the lineup', 'review the lineup', 'what's at-bat', 'what's next', 'sharpen the next at-bat', 'is the bullpen done'. Also trigger when the user shapes the next at-bat ('the next at-bat should X') - lineup owns that, not base Claude. Promotes the slots, stops. Never auto-invokes at-bat."
 ---
 
 # Lineup: Review the Next Three Batters

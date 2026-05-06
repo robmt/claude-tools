@@ -229,53 +229,6 @@ Create a task for each item and complete in order:
     NOT add a "Next step" line; lineup owns the user-facing
     call-to-action from here on.
 
-## Process Flow
-
-```dot
-digraph atbat {
-    "Discover active lineup" [shape=box];
-    "Has At Bat pointer?" [shape=diamond];
-    "Tell user to run lineup" [shape=doublecircle];
-    "Read at-bat file" [shape=box];
-    "Dependencies met?" [shape=diamond];
-    "Stop, report missing dep" [shape=doublecircle];
-    "Testability gate" [shape=diamond];
-    "Stop, ask user to choose" [shape=doublecircle];
-    "Spawn fresh subagent" [shape=box];
-    "Subagent: Red, Green, scope, manual" [shape=box];
-    "Process subagent report" [shape=diamond];
-    "Surface scope expansion to user" [shape=box];
-    "User picks?" [shape=diamond];
-    "Stop, surface precursor at-bat" [shape=doublecircle];
-    "Stop, report failure" [shape=doublecircle];
-    "Diff sanity check" [shape=diamond];
-    "git mv to completed/" [shape=box];
-    "Commit if commitAtBat" [shape=box];
-    "Hand off to lineup" [shape=doublecircle];
-
-    "Discover active lineup" -> "Has At Bat pointer?";
-    "Has At Bat pointer?" -> "Tell user to run lineup" [label="no"];
-    "Has At Bat pointer?" -> "Read at-bat file" [label="yes"];
-    "Read at-bat file" -> "Dependencies met?";
-    "Dependencies met?" -> "Stop, report missing dep" [label="no"];
-    "Dependencies met?" -> "Testability gate" [label="yes"];
-    "Testability gate" -> "Stop, ask user to choose" [label="needs human eyes\n(no consent yet)"];
-    "Testability gate" -> "Spawn fresh subagent" [label="executable\nor no-test consent"];
-    "Spawn fresh subagent" -> "Subagent: Red, Green, scope, manual";
-    "Subagent: Red, Green, scope, manual" -> "Process subagent report";
-    "Process subagent report" -> "Surface scope expansion to user" [label="scope_expansion_needed"];
-    "Process subagent report" -> "Stop, report failure" [label="other failure"];
-    "Process subagent report" -> "Diff sanity check" [label="ok"];
-    "Diff sanity check" -> "Surface scope expansion to user" [label="diff disagrees"];
-    "Diff sanity check" -> "git mv to completed/" [label="clean"];
-    "Surface scope expansion to user" -> "User picks?";
-    "User picks?" -> "Spawn fresh subagent" [label="expand:\nupdate boundary,\nre-spawn"];
-    "User picks?" -> "Stop, surface precursor at-bat" [label="split"];
-    "git mv to completed/" -> "Commit if commitAtBat";
-    "Commit if commitAtBat" -> "Hand off to lineup";
-}
-```
-
 ## Configuration
 
 Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.py` to get the

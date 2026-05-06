@@ -50,44 +50,6 @@ You MUST create a task for each of these items and complete them in order:
 8. **User reviews written bullpen** - ask user to review the file before stopping.
 9. **Stop.** Do not auto-invoke any planning or implementation skill. Hand back control to the user.
 
-## Process Flow
-
-```dot
-digraph bullpen {
-    "Resolve config\n(helper script)" [shape=box];
-    "Note project context\n(README, CLAUDE.md)" [shape=box];
-    "Ask clarifying questions\n(lazy file reads)" [shape=box];
-    "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
-    "Write bullpen doc" [shape=box];
-    "Bullpen self-review\n(fix inline)" [shape=box];
-    "User reviews bullpen?" [shape=diamond];
-    "Stop and hand back" [shape=doublecircle];
-
-    "Resolve config\n(helper script)" -> "Note project context\n(README, CLAUDE.md)";
-    "Note project context\n(README, CLAUDE.md)" -> "Ask clarifying questions\n(lazy file reads)";
-    "Ask clarifying questions\n(lazy file reads)" -> "Pick mode";
-    "Pick mode" [shape=diamond];
-    "Pick mode" -> "Recommend one path" [label="mechanical"];
-    "Pick mode" -> "Propose 2-3 alternatives" [label="design-bearing"];
-    "Recommend one path" [shape=box];
-    "Propose 2-3 alternatives" [shape=box];
-    "Recommend one path" -> "Present design (one msg)";
-    "Propose 2-3 alternatives" -> "Present design (sections)";
-    "Present design (one msg)" [shape=box];
-    "Present design (sections)" [shape=box];
-    "Present design (one msg)" -> "User approves design?";
-    "Present design (sections)" -> "User approves design?";
-    "User approves design?" -> "Pick mode" [label="no, revise"];
-    "User approves design?" -> "Write bullpen doc" [label="yes"];
-    "Write bullpen doc" -> "Bullpen self-review\n(fix inline)";
-    "Bullpen self-review\n(fix inline)" -> "User reviews bullpen?";
-    "User reviews bullpen?" -> "Write bullpen doc" [label="changes requested"];
-    "User reviews bullpen?" -> "Stop and hand back" [label="approved"];
-}
-```
-
 **The terminal state is stopping.** Do NOT invoke `writing-plans`, `north-star-planning`, `frontend-design`, `mcp-builder`, or any other skill at the end. Bullpen ends with the artifact saved and the user back in control. The user decides if and when to make any handoff.
 
 ## The Process
@@ -145,34 +107,7 @@ digraph bullpen {
 - Use `elements-of-style:writing-clearly-and-concisely` skill if available.
 - If `commitBullpen: true`, commit the bullpen document. If `false` (typical for shared/central save dirs that aren't git repos), leave it for the user.
 
-**Bullpen Self-Review:**
-After writing the bullpen document, look at it with fresh eyes:
-
-1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
-2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
-3. **Scope check:** Is this focused enough for a single piece of work, or does it need decomposition?
-4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
-5. **Speculation check:** Anything written as if known that is actually a guess? Either remove it or mark it explicitly as speculation.
-
-Fix any issues inline. No need to re-review, just fix and move on.
-
-**User Review Gate:**
-After the bullpen review loop passes, ask the user to review the written file before stopping:
-
-> "Bullpen written and committed to `<path>`. Please review it and let me know if you want to make any changes. When you are ready to start work or build a plan, kick off the next thing yourself."
-
-If `lineupActive` was `true` in step 1's config output, append one short line to that message:
-
-> "(Lineup is in use here - run `/lineup` when you're ready to fold this into the rolling work view.)"
-
-Do NOT add the nudge when `lineupActive` is `false`. The nudge is a passive pointer, not a recommendation; never auto-invoke `lineup`.
-
-Wait for the user's response. If they request changes, make them and re-run the review loop. Only stop once the user approves.
-
-**Handing off:**
-
-- The bullpen ends here. Do NOT invoke any planning or implementation skill.
-- If the user has a follow-up planning skill they prefer (for example, `north-star-planning` or `writing-plans`), they will invoke it themselves.
+**Self-review and user review gate:** Once the bullpen file is written (checklist steps 7-9), read `${CLAUDE_PLUGIN_ROOT}/skills/bullpen/finalize.md` and follow it. It covers the inline self-review (placeholder/consistency/scope/ambiguity/speculation passes), the user-review prompt (with the optional `lineupActive` nudge), and the terminal stop.
 
 ## Key Principles
 
