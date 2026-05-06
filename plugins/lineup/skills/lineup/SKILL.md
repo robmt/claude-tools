@@ -34,6 +34,16 @@ state and updates the lineup. It does NOT do the work - that is
   archive, may run `git worktree remove`. Those are the only
   filesystem/git mutations lineup performs outside of writing
   markdown files.
+- Never run build or test commands (`vue-tsc`, `npm test`,
+  `dotnet build`, `cypress`, etc.) and never inspect the
+  implementation working tree (`git status`, `git diff`, `git log`
+  against the repoRoot). The only files lineup reads are
+  `bullpen.md`, `lineup.md`, and at-bat files under the bullpen
+  folder. The only files lineup writes are `lineup.md` and a new
+  at-bat file. The only commits lineup makes contain only those
+  two files (plus the folder rename on a confirmed-completion
+  archive). If you find yourself wanting to verify implementation
+  state, stop - that is at-bat's job, not lineup's.
 
 ## Output rule: ASCII only
 
@@ -83,8 +93,27 @@ quotes, `...` for ellipses.
    and follow it. On failure, stop with the prescribed report; do
    NOT update `lineup.md`, do NOT promote. On success, continue.
    When invoked directly by the user (no at-bat hand-back in the
-   prior turn), skip this step - the user is asserting prior state
-   is correct.
+   prior turn), skip verification entirely - including any
+   independent investigation of working-tree state. Trust
+   `completed/` and `lineup.md` as written. Do not run `git
+   status`, `git diff`, or build/test commands to "check" whether
+   the prior at-bat is really done.
+
+   **Unfinished-prior-at-bat check.** Before promoting, confirm
+   the file that `lineup.md`'s At Bat pointer references has been
+   moved into `completed/`. If it still exists at the top level
+   of the bullpen folder (not in `completed/`), the previous
+   at-bat has not finished - moving the file is at-bat's last
+   step. Stop and tell the user:
+
+   > At-bat NNN appears unfinished: still At Bat in lineup.md and
+   > the file is not in completed/. Run /at-bat to finish it (or
+   > move the file manually if it is already done), then
+   > re-invoke lineup.
+
+   Do NOT attempt to finish the at-bat yourself - no commits, no
+   `git mv`, no implementation. Lineup only promotes; it never
+   plays at-bat.
 
 6. **Check completion.** Compare current state (codebase, recent
    commits, completed at-bats) to the bullpen's completion
