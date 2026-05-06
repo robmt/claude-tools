@@ -1,6 +1,6 @@
 {
   "name": "lineup",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Companion to bullpen. Manages a rolling 3-slot view (At Bat / On Deck / In the Hole) of work toward a bullpen's destination. Three skills: lineup (reviewer) sharpens the next at-bat, verifies a just-completed at-bat's Definition of done, and asks the user to confirm before archiving a completed bullpen; at-bat (implementer) does the work with red/green testing - including an early testability gate that stops before code is written if verification needs human eyes - and hands off to lineup; postmortem reflects on at-bat history once a bullpen is delivered (or when something broke).",
   "author": {
     "name": "HQA"
