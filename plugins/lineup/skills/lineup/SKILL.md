@@ -16,16 +16,18 @@ This skill never writes code and never plans more than one new In the
 Hole bullet per cycle. When invoked at the end of an at-bat run, it
 MUST verify the just-completed at-bat's Definition of done before
 promoting (see "Verification mode" below). When the bullpen's
-completion criteria are met, lineup MAY move the entire bullpen
-folder into `<effectiveSaveDir>/completed/<folder>/` as part of
-marking `Status: Complete` (see "Completion archive" below). At
-first-run bootstrap, lineup MAY run `git worktree add` if the user
-opts in to worktree use (see "Worktree decision" below); on
-completion archive it MAY run `git worktree remove` to tear that
-worktree down. Those are the only filesystem/git mutations it
-performs. It MAY invoke
-`at-bat` at the end of the hand-back, and only when the user has
-opted in via `autoContinue` (`"always"`, `"session"` for this
+completion criteria appear met, lineup MUST ask the user to confirm
+before archiving (see "Completion gate" below); only after explicit
+confirmation may it write `Status: Complete` and move the bullpen
+folder into `<effectiveSaveDir>/completed/<folder>/` (see "Completion
+archive" below). `autoContinue` does NOT bypass the completion gate -
+it governs the at-bat loop, not the archive decision. At first-run
+bootstrap, lineup MAY run `git worktree add` if the user opts in to
+worktree use (see "Worktree decision" below); on completion archive
+(post-gate) it MAY run `git worktree remove` to tear that worktree
+down. Those are the only filesystem/git mutations it performs. It MAY
+invoke `at-bat` at the end of the hand-back, and only when the user
+has opted in via `autoContinue` (`"always"`, `"session"` for this
 conversation, or `"yes"` at the per-handoff prompt). It NEVER
 invokes any other implementation skill. The user always drives the
 loop - `autoContinue` is a shortcut for typing the next command,
@@ -97,11 +99,15 @@ Create a task for each item and complete in order:
    turn), skip this step - the user is asserting prior state is correct.
 6. **Check completion.** Compare current state (codebase, recent
    commits, completed at-bats) against the bullpen's completion
-   criteria. If met -> write `Status: Complete` at the top of
-   `lineup.md`, archive the folder (see "Completion archive" below),
-   then skip ahead to step 9 (commit) and step 10 (hand-back). Steps
-   7-8 (promotion) are not run on completion. Tell the user where the
-   folder was moved as part of the hand-back.
+   criteria. If criteria appear met -> run the completion gate (see
+   "Completion gate" below). Only after the user explicitly confirms
+   `archive` do you write `Status: Complete` at the top of `lineup.md`,
+   archive the folder (see "Completion archive" below), and skip ahead
+   to step 9 (commit) and step 10 (hand-back). Steps 7-8 (promotion)
+   are not run on a confirmed-complete archive. If the user replies
+   `not yet`, fall through to step 7 (promote slots) and continue the
+   loop normally - do not write `Status: Complete`, do not move the
+   folder. If the user replies `cancel`, stop entirely with no writes.
 7. **Promote.** Otherwise:
    - Promote On Deck -> At Bat. Create the next `NNN-<slug>.md` file in
      the lineup folder with the full required structure (see the
@@ -291,12 +297,52 @@ verification"), run these checks before promoting:
 When invoked directly by the user (no at-bat hand-back in the prior
 turn), skip verification - the user is asserting the prior state.
 
+## Completion gate
+
+Lineup never archives a bullpen on its own judgment. Before any
+`Status: Complete` write, folder rename, worktree removal, or archive
+commit, lineup MUST ask the user to confirm.
+
+`autoContinue` does NOT bypass this gate. The at-bat loop autopilot
+governs whether lineup invokes at-bat between cycles; it has nothing
+to say about whether the bullpen is finished. Treating `"always"` as
+license to archive turns a fuzzy judgment call into a silent burial.
+
+Procedure:
+
+1. **Show your work.** Print each completion criterion from the
+   bullpen verbatim, and next to it the concrete evidence you're
+   using to call it met: the at-bat that delivered it, the commit
+   SHA, the file path, the test that's now passing, the grep that
+   comes up empty. One line of evidence per criterion. If a
+   criterion's evidence is weak ("seems done", "probably covered by
+   003"), say so plainly - that is exactly the kind of judgment the
+   user needs to see before saying yes.
+2. **Ask.** End with the literal prompt:
+   `Completion criteria look met. Archive the bullpen now? (archive / not yet / cancel)`
+3. **Branch on the reply.**
+   - `archive` -> proceed with the Completion archive procedure below.
+   - `not yet` -> the user disagrees with one or more criteria, or
+     wants more work first. Fall through to step 7 (promote slots)
+     and continue the normal loop. Do NOT write `Status: Complete`.
+     Do NOT move the folder. Do NOT remove the worktree.
+   - `cancel` -> stop entirely. Do not promote, do not archive, do
+     not commit. The user wants to think about it.
+4. **No silent ratification.** Never treat absence of objection,
+   `autoContinue: "always"`, or a previous session's `archive`
+   confirmation as standing consent for the current archive. If the
+   reply is ambiguous, ask again with the same three options.
+
 ## Completion archive
 
-When step 6 detects the bullpen's completion criteria are met,
-lineup writes `Status: Complete` at the top of `lineup.md` AND moves
-the bullpen folder out of the live area so the file tree (and
-Obsidian / IDE previews) stays focused on in-flight work.
+This section runs only after the Completion gate has been answered
+`archive`. Do not enter it on Claude's judgment alone.
+
+When step 6 detects the bullpen's completion criteria are met AND the
+user has confirmed `archive`, lineup writes `Status: Complete` at the
+top of `lineup.md` AND moves the bullpen folder out of the live area
+so the file tree (and Obsidian / IDE previews) stays focused on
+in-flight work.
 
 Procedure:
 
@@ -382,8 +428,13 @@ digraph lineup {
     "lineup.md exists?" -> "First-run bootstrap" [label="no"];
     "lineup.md exists?" -> "Completion met?" [label="yes"];
     "First-run bootstrap" -> "Commit if commitAtBat";
+    "Completion gate\n(ask user)" [shape=diamond];
     "Mark Status: Complete\nand archive folder" [shape=box];
-    "Completion met?" -> "Mark Status: Complete\nand archive folder" [label="yes"];
+    "Stop, no writes" [shape=doublecircle];
+    "Completion met?" -> "Completion gate\n(ask user)" [label="yes"];
+    "Completion gate\n(ask user)" -> "Mark Status: Complete\nand archive folder" [label="archive"];
+    "Completion gate\n(ask user)" -> "Promote slots" [label="not yet"];
+    "Completion gate\n(ask user)" -> "Stop, no writes" [label="cancel"];
     "Mark Status: Complete\nand archive folder" -> "Commit if commitAtBat";
     "Completion met?" -> "Promote slots" [label="no"];
     "Promote slots" -> "Update lineup.md";
@@ -425,6 +476,9 @@ There is no `.lineup.json`. Lineup shares bullpen's config.
   the state.
 - **Bullpen owns completion.** You read the criteria; you don't define
   them. If the bullpen lacks criteria, push it back to the user.
+- **User confirms archive.** "Criteria look met" is a question, not a
+  verdict. Show the evidence and ask before any `Status: Complete`
+  write or folder move. `autoContinue` is irrelevant here.
 - **Honest about uncertainty.** On Deck is fuzzy on purpose. In the Hole
   is fuzzier on purpose. Don't write paragraphs about either - a
   sentence per slot is the budget.
