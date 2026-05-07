@@ -165,6 +165,23 @@ Create a task for each item and complete in order:
      implementation.) On `split`, surface the precursor at-bat to the
      user as a candidate for the lineup and stop; do not move the
      file, do not commit, do not hand off.
+   - `status: approach_unclear` -> the thrashing stop trigger fired
+     inside the subagent. The unit isn't converging; more attempts
+     won't fix it. Surface the subagent's `notes` (which name the
+     specific signal: failed-attempt count, recurring error, expanding
+     in-scope footprint) and offer the user three options:
+
+     > "At-bat NNN didn't converge: <signal from notes>. Three ways
+     > forward: (a) re-shape this at-bat's What / Test plan so the
+     > unit is smaller or clearer, (b) split it into a precursor
+     > at-bat plus a remainder, or (c) abandon and let lineup pick a
+     > different next step. Which?"
+
+     Do NOT move the file, do NOT commit, do NOT hand off. Wait for
+     the user. On `re-shape`, edit the at-bat file per their direction
+     and re-spawn a fresh subagent (same one-bounced-attempt allowance
+     as `scope_expansion_needed`). On `split` or `abandon`, stop here;
+     the user re-invokes lineup to take it from there.
    - Any other failure status (`red_did_not_fail`, `green_failed`,
      `manual_verification_failed`) -> stop and report the subagent's
      notes to the user. Do not move the file, do not commit, do not

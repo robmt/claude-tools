@@ -9,10 +9,16 @@ Ask the user whether to run this bullpen in a git worktree.
 Recommend `yes` if the bullpen's scope looks substantial; `no` for
 small, contained bullpens.
 
+Do NOT predict the total at-bat count when deciding. The lineup
+only sees the next three batters; anything past In the Hole is in
+the dugout. Read the bullpen's destination and judge based on
+present signals, not a projected length.
+
 ## When to recommend a worktree
 
-- The bullpen's scope spans multiple at-bats and is likely to
-  touch files outside a single area.
+- The bullpen's destination implies changes across several areas
+  of the codebase (cross-cutting concern, broad refactor,
+  unfamiliar subsystem).
 - The work is risky or speculative and the user benefits from a
   clean branch they can throw away.
 - The user is currently mid-flight on another branch in the main
@@ -20,8 +26,8 @@ small, contained bullpens.
 
 ## When to skip a worktree
 
-- The bullpen is small (one or two at-bats) and contained.
-- The work is a quick fix or a doc change.
+- The bullpen looks like a quick fix, a doc change, or a tightly
+  scoped tweak in one area.
 - The bullpen folder lives outside any git repo (`repoRoot` is
   null).
 

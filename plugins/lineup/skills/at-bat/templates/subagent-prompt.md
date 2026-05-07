@@ -123,6 +123,36 @@ entirely In. The main agent runs a `git diff --stat` sanity check after
 you return; if your report says `scope_status: clean` but the diff
 shows Out files, that is a verification failure on you.
 
+## Stop trigger: thrashing
+
+A well-shaped at-bat reaches Green within a handful of focused
+implementation attempts. If you find yourself in any of these
+states, STOP and return early:
+
+- You have made 3+ distinct attempts at Green and the test still
+  fails - you are guessing, not converging.
+- You are debugging in circles: the same fix landed twice, the
+  same error keeps reappearing, you cannot point to what changed
+  between attempts.
+- The work keeps revealing required In-scope changes you did not
+  see when reading the at-bat, and each one uncovers more - the
+  unit is sized wrong for the shape it was given.
+
+Return your report with `status: approach_unclear` and put the
+specific signal in `notes` ("3 green attempts, all fail because
+<reason>", "every fix to A breaks B", "the at-bat says wire X to
+Y but Y has three implementations and I cannot tell which"). The
+main agent will surface this to the user so the at-bat can be
+re-shaped or split.
+
+Grinding past this point IS the failure. The at-bat takes as long
+as it takes, but a subagent that is genuinely stuck does not get
+unstuck by more attempts; it gets unstuck by a human re-reading
+the at-bat and changing what it says. This is distinct from
+`scope_expansion_needed` (which is about an Out file that must
+change) - thrashing is when In-scope work itself isn't
+converging.
+
 ## Anti-patterns
 
 - **"While I'm here, let me also fix..."** No. If you find a real
@@ -153,7 +183,7 @@ Your final message MUST be exactly this block, filled in. No prose
 around it, no farewell, no "next step":
 
 ```
-status: ok | scope_expansion_needed | red_did_not_fail | green_failed | manual_verification_failed
+status: ok | scope_expansion_needed | approach_unclear | red_did_not_fail | green_failed | manual_verification_failed
 red_command: <command and exit code, or "n/a" for no-test escape>
 green_command: <command and exit code>
 files_touched: <list>
