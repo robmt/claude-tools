@@ -171,6 +171,37 @@ converging.
   you can. Defer only the slice that truly needs human eyes, and say
   which slice.
 
+## Progress log
+
+The at-bat file has a `## Progress` section. Append a one-liner to
+it after each meaningful step so a watcher (and the user) can see
+what's happening in real time. Format:
+
+```
+HH:MM <one short line: what just happened, exit code if relevant>
+```
+
+Use 24-hour local time. Examples:
+
+```
+14:02 red command ran, exit 1 as expected
+14:05 green attempt 1 - fails: NullReferenceException at Foo.cs:42
+14:09 green attempt 2 - passes
+14:11 scope check clean
+14:12 manual verification: curl /foo returns 200
+```
+
+Append after: each Red command run, each Green attempt (even
+failures), each scope re-check, each manual verification step,
+each kill-the-background-process step. Do NOT batch - write the
+line as soon as the step lands. Keep each line short; long context
+goes in the final report's `notes` field.
+
+When you write a thrash-signal line, name it plainly. Phrases the
+watcher recognizes: `attempt 3+`, `still failing`, `reverting`,
+`going in circles`, `stuck`. If you are about to return
+`status: approach_unclear`, your last Progress line should say so.
+
 ## Verification record
 
 Append a `## Verification` section to the at-bat file (path provided in

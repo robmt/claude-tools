@@ -26,6 +26,8 @@ DEFAULTS = {
     "commitAtBat": True,
     "nestUnderRepoName": False,
     "autoContinue": "prompt",
+    "watchAtBat": False,
+    "watchCeilingSec": 1800,
 }
 
 VALID_AUTO_CONTINUE = {"never", "prompt", "always"}
@@ -271,6 +273,8 @@ def main():
         "commitAtBat": config["commitAtBat"],
         "nestUnderRepoName": config["nestUnderRepoName"],
         "autoContinue": config["autoContinue"],
+        "watchAtBat": config["watchAtBat"],
+        "watchCeilingSec": config["watchCeilingSec"],
         "repoName": rname,
         "effectiveSaveDir": effective,
         "repoRoot": str(root) if root else None,

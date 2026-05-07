@@ -149,6 +149,17 @@ class ApplyLayerTests(unittest.TestCase):
         rc.apply_layer(cfg, {"commitAtBat": True})
         self.assertTrue(cfg["commitAtBat"])
 
+    def test_watchAtBat_default_false(self):
+        cfg = self._base()
+        self.assertFalse(cfg["watchAtBat"])
+        self.assertEqual(cfg["watchCeilingSec"], 1800)
+
+    def test_watchAtBat_layer_override(self):
+        cfg = self._base()
+        rc.apply_layer(cfg, {"watchAtBat": True, "watchCeilingSec": 600})
+        self.assertTrue(cfg["watchAtBat"])
+        self.assertEqual(cfg["watchCeilingSec"], 600)
+
 
 class LoadConfigLayerTests(unittest.TestCase):
     """Filename-precedence tests for load_config_layer()."""

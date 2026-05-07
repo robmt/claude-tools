@@ -142,6 +142,27 @@ quotes, `...` for ellipses.
    direction conflicts with the bullpen's stated destination,
    surface the conflict back to the user before writing.
 
+   **Three at-bat forms.** Most at-bats are `Form: standard`
+   (implementation + Red/Green); the at-bat skill detects and
+   handles `Form: no-test` (eyes-open consent) and `Form: review`
+   (no implementation, user verifies something) automatically.
+   Pick the form that fits when shaping:
+
+   - User says "have me run the app and check" / "review the
+     staging deploy" / "approve the proposed plan first" ->
+     `Form: review`. Fill the Review procedure section instead of
+     Test plan; see `templates/at-bat.md` "Review-only form."
+   - User says "this one needs visual confirmation" / "no good
+     way to test this automatically" -> `Form: no-test`. Keep
+     the Test plan section but use the no-test escape shape.
+   - Otherwise -> `Form: standard`. Default; omit the Form line
+     for backward compatibility, or write `Form: standard`
+     explicitly. Both are fine.
+
+   Write the form line on line 1 of the at-bat file when it is
+   `no-test` or `review`. Lineup never silently picks `review`
+   without user signal - always ask if you are unsure.
+
 8. **Update `lineup.md`.** Replace the At Bat pointer with the new
    file name. Update On Deck and In the Hole. Append the
    previously-completed at-bat to the Completed list (its file
@@ -247,8 +268,9 @@ Sidecars live under `${CLAUDE_PLUGIN_ROOT}/skills/lineup/templates/`
 and are read only when the corresponding branch fires - they are
 NOT loaded by default:
 
-- `at-bat.md` - new at-bat file structure (Red/Green form +
-  no-test escape, with push-back guidance).
+- `at-bat.md` - new at-bat file structure (three forms:
+  standard Red/Green, no-test escape with eyes-open consent,
+  and review-only for human verification at-bats).
 - `lineup.md` - active and completed `lineup.md` structure +
   monotonic counter rules.
 - `verification.md` - verification-mode procedure (checklist

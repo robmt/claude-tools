@@ -21,6 +21,8 @@ Either file may be absent. If both are absent, hardcoded defaults apply.
 | `commitAtBat`        | bool    | `true`             | Commit each at-bat (test+impl+file-move) as a single commit. `true` keeps each at-bat individually revertable. |
 | `nestUnderRepoName`  | bool    | `false`            | When true, save path becomes `<saveDir>/<repo-name>/YYYY-MM-DD-<topic>/bullpen.md`. See below. |
 | `autoContinue`       | string  | `"prompt"`         | `"never"`, `"prompt"`, or `"always"`. Governs the lineup -> at-bat handoff (at-bat -> lineup is mandatory and not configurable). See "Continuation" below. |
+| `watchAtBat`         | bool    | `false`            | When true, at-bat spawns its implementation subagent in the background and runs a Monitor on the at-bat file's `## Progress` section. Thrash signals and runtime-ceiling crossings raise a desktop notification so the user can intervene early on long-running at-bats. See `lineup/skills/at-bat/templates/watcher.md`. |
+| `watchCeilingSec`    | int     | `1800`             | Runtime ceiling for the watcher in seconds (default 30 min). Only consulted when `watchAtBat: true`. |
 
 Legacy: two older key names are honored as fallbacks for `commitBullpen`,
 in precedence order `commitBullpen` > `commitSpitball` > `autoCommit`.

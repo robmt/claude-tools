@@ -8,6 +8,17 @@ Run these checks before promoting when invoked from at-bat.
    references it as At Bat (i.e., at-bat moved the file but lineup
    hasn't yet updated the pointer - that's exactly the state lineup
    is here to resolve).
+
+   **Form fork.** Check line 1 for a `Form:` marker.
+
+   - `Form: standard` or absent (default) -> continue with the
+     full procedure below.
+   - `Form: no-test` -> continue with the full procedure; trust
+     the recorded eyes-open consent for criteria the at-bat
+     itself flagged as not-runnable.
+   - `Form: review` -> the verifier checks for a positive user
+     verdict, not for command outputs. Skip steps 2-4 and run
+     the review-form check at the bottom of this file.
 2. **Read the Definition of done section.** Each line is a criterion.
 3. **Verify each criterion concretely.** Don't just read; check.
    - File-existence claims -> confirm the file exists.
@@ -49,3 +60,28 @@ Run these checks before promoting when invoked from at-bat.
 When invoked directly by the user (no at-bat hand-back in the
 prior turn), skip verification - the user is asserting the prior
 state.
+
+## Review-form check (Form: review)
+
+For review-only at-bats, the at-bat skill has already captured
+the user's verdict in the file's `## Verification` and
+`## Progress` sections before handing off. The verifier's job is
+just to confirm the verdict is recorded and positive.
+
+1. **Read `## Progress`.** Confirm there is a line of the form
+   `HH:MM user replied: <verdict>`. If absent, that's a
+   verification failure - the at-bat skill should not have
+   handed off without capturing one. Stop and tell the user
+   the review at-bat appears incomplete.
+2. **Read `## Verification`.** Confirm the recorded verdict is
+   positive (`pass`, `pass with notes: <text>`, or equivalent
+   affirmative wording). If the verdict is negative or
+   ambiguous, stop with a verification failure - the at-bat
+   skill should have stopped before hand-off in that case.
+3. **Note in the hand-back:** "Verified review at-bat NNN: user
+   approved." Capture any pass-with-notes feedback in the
+   summary so it surfaces in the lineup hand-back.
+
+There is no scope-boundary diff check for review at-bats - they
+have no diff. Trust the human verdict; do not invent additional
+verification steps.

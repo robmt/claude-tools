@@ -85,8 +85,24 @@ Create a task for each item and complete in order:
    If the worktree path doesn't exist on disk, stop and tell the user
    - lineup recorded a worktree that's no longer there.
 3. **Read the At Bat file.** This is the file `NNN-<slug>.md` referenced
-   by the At Bat pointer. Confirm it has the required sections: What,
-   Definition of done, Test plan, Scope boundary, Dependencies.
+   by the At Bat pointer. Check line 1 for a `Form:` marker; absence
+   defaults to `Form: standard`. Three forms:
+
+   - `Form: standard` -> implementation + Red/Green test. Confirm
+     the file has: What, Definition of done, Test plan, Scope
+     boundary, Dependencies. Continue to step 4.
+   - `Form: no-test` -> implementation + manual verification with
+     eyes-open consent. Same required sections as standard.
+     Continue to step 4; the testability gate at step 5 will
+     surface the eyes-open consent prompt.
+   - `Form: review` -> no implementation; the user reviews
+     something and reports back. Read
+     `${CLAUDE_PLUGIN_ROOT}/skills/at-bat/templates/review.md`
+     and follow it. That sidecar replaces steps 5-9 (testability
+     gate, subagent spawn, report processing, diff sanity, Notes
+     append) with a human-loop flow. Steps 4 (dependencies) and
+     10-12 (file move, commit, hand-off) still run on a positive
+     verdict.
 4. **Verify dependencies.** If the at-bat lists prior at-bats as
    dependencies, confirm those are in `completed/`. If a dependency
    isn't met, stop and tell the user.
@@ -139,6 +155,16 @@ Create a task for each item and complete in order:
 
    The subagent does NOT run `git mv`, does NOT commit, and does NOT
    invoke lineup. Those are the main agent's job in steps 8-10.
+
+   **Watcher fork.** If `watchAtBat` is true (resolved at step 1),
+   read `${CLAUDE_PLUGIN_ROOT}/skills/at-bat/templates/watcher.md` and
+   follow it. That sidecar describes the background-spawn + Monitor
+   pattern that gives the main agent in-flight visibility into the
+   subagent's `## Progress` appends. When it returns control, you have
+   the subagent's report in hand and the Monitor is stopped - proceed
+   to step 7 normally. If `watchAtBat` is false (default), spawn the
+   subagent foreground (no `run_in_background`, no Monitor) and wait
+   for its report inline; same effect, no watcher.
 7. **Process the subagent's report.** The report shape is defined in
    the sidecar; expect a fixed block with `status`, `red_command`,
    `green_command`, `files_touched`, `scope_status`,
@@ -262,6 +288,12 @@ bullpen plugin's `configuration.md` for the schema. At-bat uses:
   at-bat is revertable as a single commit.
 - `autoContinue` - passed through to lineup at hand-off; lineup decides
   whether to advance into the next at-bat after verifying.
+- `watchAtBat` - whether to spawn the implementation subagent in the
+  background and run a Monitor on its `## Progress` appends (default
+  `false`). When true, see `templates/watcher.md` for the procedure.
+- `watchCeilingSec` - runtime ceiling in seconds for the watcher
+  (default `1800`, i.e. 30 min). Only consulted when `watchAtBat` is
+  true.
 - `repoRoot` - repo root path (used for `git mv` and commit operations).
 
 There is no `.lineup.json`. Lineup and at-bat share bullpen's config.
